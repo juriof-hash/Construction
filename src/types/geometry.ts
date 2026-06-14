@@ -9,6 +9,8 @@ export interface BaseGeom {
   id: GeomId;
   type: 'point' | 'line' | 'circle' | 'arc';
   selected?: boolean;
+  source?: 'initial' | 'user';
+  label?: string;
 }
 
 export interface PointGeom extends BaseGeom {

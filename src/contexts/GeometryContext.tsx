@@ -11,6 +11,7 @@ type State = {
 type Action = 
   | { type: 'ADD_GEOMETRY'; payload: Geometry }
   | { type: 'REMOVE_GEOMETRY'; payload: GeomId }
+  | { type: 'SET_GEOMETRIES'; payload: Geometry[] }
   | { type: 'SET_VIEW'; payload: Partial<ViewTransform> }
   | { type: 'UNDO' }
   | { type: 'REDO' };
@@ -44,6 +45,14 @@ const reducer = (state: State, action: Action): State => {
         geometries: newGeoms,
         history: newHistory,
         historyIndex: newHistory.length - 1
+      };
+    }
+    case 'SET_GEOMETRIES': {
+      return {
+        ...state,
+        geometries: action.payload,
+        history: [action.payload],
+        historyIndex: 0
       };
     }
     case 'SET_VIEW':
