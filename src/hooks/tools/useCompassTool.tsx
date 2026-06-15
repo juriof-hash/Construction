@@ -9,6 +9,7 @@ import {
   polarToCartesian,
 } from "../../utils/mathUtils";
 import { EuclideanPoint } from "../../components/EuclideanPoint";
+import { CompassVisual } from "../../components/CompassVisual";
 
 type CompassStep = "NEEDLE" | "PENCIL" | "SWEEP";
 
@@ -214,15 +215,7 @@ export const useCompassTool = (
 
       {step === "PENCIL" && radiusPt && (
         <>
-          <line
-            x1={center!.x}
-            y1={center!.y}
-            x2={radiusPt.x}
-            y2={radiusPt.y}
-            stroke="#f59e0b"
-            strokeWidth={1}
-            strokeDasharray="4 4"
-          />
+          <CompassVisual needlePt={center!} pencilPt={radiusPt} />
           <circle
             cx={center!.x}
             cy={center!.y}
@@ -264,25 +257,23 @@ export const useCompassTool = (
             />
           )}
 
-          {/* Pencil indicator */}
-          {!isStartedRef.current &&
-            pencilHoverAngle !== null &&
-            (() => {
-              const pt = polarToCartesian(
+          {/* Compass Visual Representation for Sweeping */}
+          {(() => {
+            let pt: Point2D | null = null;
+            if (Math.abs(renderSweep.totalSweep) > 0 || isStartedRef.current) {
+              pt = polarToCartesian(
                 center.x,
                 center.y,
                 r,
-                pencilHoverAngle,
+                renderSweep.startAngle + renderSweep.totalSweep,
               );
-              return (
-                <EuclideanPoint
-                  x={pt.x}
-                  y={pt.y}
-                  color="#f59e0b"
-                  preview={true}
-                />
-              );
-            })()}
+            } else if (pencilHoverAngle !== null) {
+              pt = polarToCartesian(center.x, center.y, r, pencilHoverAngle);
+            }
+            return pt ? (
+              <CompassVisual needlePt={center} pencilPt={pt} />
+            ) : null;
+          })()}
         </>
       )}
 

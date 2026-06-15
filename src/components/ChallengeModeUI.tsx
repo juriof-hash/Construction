@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useRef, useState } from "react";
 import { useChallengeMode } from "../hooks/useChallengeMode";
 import { MISSIONS } from "../missions";
 import { useGeometry } from "../contexts/GeometryContext";
@@ -6,7 +6,7 @@ import { GeometryObject } from "../types/mission";
 import { Geometry } from "../types/geometry";
 import { mapGeometryToGeometryObject } from "../utils/challengeGeometry";
 import { FeedbackPanel } from "./FeedbackPanel";
-import { Target, ArrowRight, RotateCcw } from "lucide-react";
+import { Target, ArrowRight, RotateCcw, Clock, Circle } from "lucide-react";
 import { motion } from "motion/react";
 
 const computeGeomsAABB = (geoms: Geometry[]) => {
@@ -48,12 +48,20 @@ export const ChallengeModeUI: React.FC = () => {
   } = useChallengeMode(MISSIONS);
   const { state: geomState, dispatch: geomDispatch } = useGeometry();
 
-  React.useEffect(() => {
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
     if (currentMission && currentMission.initialGeometries) {
       const geoms = currentMission.initialGeometries();
       geomDispatch({ type: "SET_GEOMETRIES", payload: geoms });
 
-      // Auto-center the view
+      setElapsedSec(0);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = setInterval(() => {
+        setElapsedSec((prev) => prev + 1);
+      }, 1000);
+
       const aabb = computeGeomsAABB(geoms);
       if (aabb) {
         const cx = (aabb.minX + aabb.maxX) / 2;
@@ -67,16 +75,30 @@ export const ChallengeModeUI: React.FC = () => {
       }
     } else {
       geomDispatch({ type: "SET_GEOMETRIES", payload: [] });
+      if (timerRef.current) clearInterval(timerRef.current);
     }
-  }, [currentMission, geomDispatch]);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [currentMission, geomDispatch, state.currentMissionIndex]);
+
+  // Pause timer on success
+  useEffect(() => {
+    if (state.status === "success" && timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+  }, [state.status]);
+
+  const compassCount = geomState.geometries.filter(
+    (g) => (g.type === "circle" || g.type === "arc") && g.source === "user",
+  ).length;
 
   const handleCheck = () => {
-    // Map Context Geometries to standard GeometryObjects
     const objects: GeometryObject[] = geomState.geometries.map(
       mapGeometryToGeometryObject,
     );
 
-    // Extract Ref Objects internally based on current mission logic
     const refMap: Record<string, GeometryObject> = {};
     if (currentMission) {
       for (const [key, label] of Object.entries(
@@ -91,7 +113,10 @@ export const ChallengeModeUI: React.FC = () => {
       }
     }
 
-    checkAnswer(objects, refMap);
+    checkAnswer(objects, refMap, {
+      elapsedTimeSec: elapsedSec,
+      compassCount: compassCount,
+    });
   };
 
   if (!currentMission) {
@@ -102,10 +127,10 @@ export const ChallengeModeUI: React.FC = () => {
         className="absolute left-6 top-6 w-80 bg-white/90 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-6 z-20 cursor-move"
       >
         <h2 className="text-xl font-bold text-slate-800 mb-2">
-          모든 도전 완료!
+          모든 미션 완료!
         </h2>
         <p className="text-sm text-slate-600 mb-4">
-          기하학 작도의 기본기를 모두 마스터하셨습니다.
+          도전 모드의 모든 단계를 마스터하셨습니다.
         </p>
         <button
           onClick={resetChallenge}
@@ -121,7 +146,7 @@ export const ChallengeModeUI: React.FC = () => {
     <motion.div
       drag
       dragMomentum={false}
-      className="absolute left-6 top-6 w-80 bg-white/95 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-5 z-20 flex flex-col pointer-events-auto cursor-drag"
+      className="absolute left-6 top-6 w-96 bg-white/95 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-5 z-20 flex flex-col pointer-events-auto cursor-drag"
     >
       <div className="flex items-center gap-2 mb-3 cursor-move">
         <select
@@ -131,21 +156,52 @@ export const ChallengeModeUI: React.FC = () => {
         >
           {MISSIONS.map((m, i) => (
             <option key={m.id} value={i}>
-              STAGE {m.stage}
+              {m.title}
             </option>
           ))}
         </select>
         <div className="text-slate-400 text-sm font-medium">
-          Mission {state.currentMissionIndex + 1} / {MISSIONS.length}
+          {state.currentMissionIndex + 1} / {MISSIONS.length}
         </div>
       </div>
 
       <h2 className="text-lg font-bold text-slate-800 mb-2 cursor-move">
         {currentMission.title}
       </h2>
-      <p className="text-sm text-slate-600 leading-relaxed mb-5 cursor-move">
+      <p className="text-sm text-slate-600 leading-relaxed mb-4 cursor-move">
         {currentMission.description}
       </p>
+
+      <div className="flex items-center gap-4 mb-5 border-t border-b border-slate-100 py-3 bg-slate-50/50 px-2">
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <Clock className="w-4 h-4" />
+          <span className="text-sm font-medium">
+            <span
+              className={
+                elapsedSec > currentMission.targetTimeSec ? "text-red-500" : ""
+              }
+            >
+              {elapsedSec}s
+            </span>{" "}
+            / {currentMission.targetTimeSec}s
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <Circle className="w-4 h-4" />
+          <span className="text-sm font-medium">
+            <span
+              className={
+                compassCount > currentMission.optimalCompassCount
+                  ? "text-red-500"
+                  : ""
+              }
+            >
+              {compassCount}회
+            </span>{" "}
+            / {currentMission.optimalCompassCount}회
+          </span>
+        </div>
+      </div>
 
       {state.status !== "success" ? (
         <button

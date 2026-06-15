@@ -1,131 +1,190 @@
-import { MissionDefinition } from '../types/mission';
-import { validateMission1 } from './mission1';
-import { validateMission2 } from './mission2';
-import { validateMission3 } from './mission3';
-import { validateMission4 } from './mission4';
-import { validateMission5 } from './mission5';
-import { validateMission6 } from './mission6';
+import { ChallengeMissionData } from "../types/challenge";
+import { Geometry } from "../types/geometry";
+import {
+  validateMission1_1,
+  validateMission1_2,
+  validateMission1_3,
+  validateMission1_4,
+} from "../data/stage1Validators";
 
 const r = (min: number, max: number) => Math.random() * (max - min) + min;
 
-export const MISSIONS: MissionDefinition[] = [
+export const MISSIONS: ChallengeMissionData[] = [
   {
-    id: 'mission-1',
+    id: "mission-1-1",
     stage: 1,
-    title: '크기가 같은 선분',
-    description: '점 C에서 시작하여, 주어진 선분 AB와 길이가 같은 선분을 작도하세요.',
-    referenceLabels: { 'C': 'C', 'AB': 'AB' },
-    validate: validateMission1,
-    initialGeometries: () => {
-      const ax = r(0, 100), ay = r(-150, -50);
-      const bx = r(0, 100), by = ax + r(50, 150);
-      const cx = r(-150, -50), cy = r(-50, 50);
+    level: 1,
+    title: "미션 1-1: 길이가 같은 선분의 작도",
+    description:
+      '점 C에서 시작하여, 주어진 선분 AB와 길이가 같은 선분을 작도하세요. 교점이 생성되었더라도 직접 "선분 도구"로 이어야 합니다.',
+    optimalCompassCount: 1,
+    targetTimeSec: 20,
+    referenceLabels: { C: "C", AB: "AB" },
+    validate: validateMission1_1,
+    initialGeometries: (): Geometry[] => {
+      const ax = r(0, 100),
+        ay = r(-150, -50);
+      const bx = ax + r(50, 100),
+        by = ay;
+      const cx = r(-150, -50),
+        cy = r(-50, 50);
       return [
-        { id: 'ref-C', type: 'point', pt: { x: cx, y: cy }, source: 'initial', label: 'C' },
-        { id: 'ref-A', type: 'point', pt: { x: ax, y: ay }, source: 'initial', label: 'A' },
-        { id: 'ref-B', type: 'point', pt: { x: bx, y: by }, source: 'initial', label: 'B' },
-        { id: 'ref-AB', type: 'line', p1: { x: ax, y: ay }, p2: { x: bx, y: by }, source: 'initial', label: 'AB' }
+        {
+          id: "ref-C",
+          type: "point",
+          pt: { x: cx, y: cy },
+          source: "initial",
+          label: "C",
+        },
+        {
+          id: "ref-A",
+          type: "point",
+          pt: { x: ax, y: ay },
+          source: "initial",
+          label: "A",
+        },
+        {
+          id: "ref-B",
+          type: "point",
+          pt: { x: bx, y: by },
+          source: "initial",
+          label: "B",
+        },
+        {
+          id: "ref-AB",
+          type: "line",
+          p1: { x: ax, y: ay },
+          p2: { x: bx, y: by },
+          source: "initial",
+          label: "AB",
+        },
       ];
-    }
+    },
   },
   {
-    id: 'mission-2',
+    id: "mission-1-2",
     stage: 1,
-    title: '크기가 같은 각',
-    description: '주어진 각 ABC와 크기가 같은 각을 반직선 DE 위에서 점 D를 꼭짓점으로 하여 작도하세요.',
-    referenceLabels: { 'D': 'D', 'DE': 'DE', 'BA': 'BA', 'BC': 'BC' },
-    validate: validateMission2,
-    initialGeometries: () => {
-      const bx = r(-200, -100), by = r(-50, 50);
-      const ax = bx + r(50, 120), ay = by + r(-120, -50);
-      const cx = bx + r(50, 120), cy = by + r(50, 120);
-      const dx = r(0, 100), dy = r(-50, 50);
-      const ex = dx + r(100, 180), ey = dy + r(-30, 30);
+    level: 2,
+    title: "미션 1-2: 길이가 2배인 선분을 작도",
+    description:
+      "선분 AB를 연장한 직선 위에서, 점 A나 점 B를 끝점으로 하면서 길이가 원본의 2배인 선분을 직접 그리세요.",
+    optimalCompassCount: 2,
+    targetTimeSec: 30,
+    referenceLabels: { AB: "AB", A: "A", B: "B" },
+    validate: validateMission1_2,
+    initialGeometries: (): Geometry[] => {
+      const ax = r(-50, 50),
+        ay = r(-50, 50);
+      const bx = ax + r(50, 100),
+        by = ay + r(-20, 20);
       return [
-        { id: 'ref-B', type: 'point', pt: { x: bx, y: by }, source: 'initial', label: 'B' },
-        { id: 'ref-A', type: 'point', pt: { x: ax, y: ay }, source: 'initial', label: 'A' },
-        { id: 'ref-C', type: 'point', pt: { x: cx, y: cy }, source: 'initial', label: 'C' },
-        { id: 'ref-BA', type: 'line', p1: { x: bx, y: by }, p2: { x: ax, y: ay }, source: 'initial', label: 'BA' },
-        { id: 'ref-BC', type: 'line', p1: { x: bx, y: by }, p2: { x: cx, y: cy }, source: 'initial', label: 'BC' },
-        { id: 'ref-D', type: 'point', pt: { x: dx, y: dy }, source: 'initial', label: 'D' },
-        { id: 'ref-DE', type: 'line', p1: { x: dx, y: dy }, p2: { x: ex, y: ey }, source: 'initial', label: 'DE' },
+        {
+          id: "ref-A",
+          type: "point",
+          pt: { x: ax, y: ay },
+          source: "initial",
+          label: "A",
+        },
+        {
+          id: "ref-B",
+          type: "point",
+          pt: { x: bx, y: by },
+          source: "initial",
+          label: "B",
+        },
+        {
+          id: "ref-AB",
+          type: "line",
+          p1: { x: ax, y: ay },
+          p2: { x: bx, y: by },
+          source: "initial",
+          label: "AB",
+        },
       ];
-    }
+    },
   },
   {
-    id: 'mission-3',
-    stage: 2,
-    title: '수직이등분선 작도',
-    description: '주어진 선분 AB의 수직이등분선을 작도하세요.',
-    referenceLabels: { 'AB': 'AB' },
-    validate: validateMission3,
-    initialGeometries: () => {
-      const ax = r(-150, -50), ay = r(-50, 50);
-      const bx = ax + r(100, 200), by = ay + r(-50, 50);
+    id: "mission-1-3",
+    stage: 1,
+    level: 3,
+    title: "미션 1-3: 정삼각형의 작도",
+    description:
+      "주어진 선분 AB를 한 변으로 하는 완벽한 정삼각형을 작도하세요. 점들을 꼭 선분으로 이어 닫힌 삼각형을 만들어야 합니다.",
+    optimalCompassCount: 2,
+    targetTimeSec: 35,
+    referenceLabels: { AB: "AB" },
+    validate: validateMission1_3,
+    initialGeometries: (): Geometry[] => {
+      const ax = r(-80, -30),
+        ay = r(50, 100);
+      const bx = ax + r(100, 150),
+        by = ay;
       return [
-        { id: 'ref-A', type: 'point', pt: { x: ax, y: ay }, source: 'initial', label: 'A' },
-        { id: 'ref-B', type: 'point', pt: { x: bx, y: by }, source: 'initial', label: 'B' },
-        { id: 'ref-AB', type: 'line', p1: { x: ax, y: ay }, p2: { x: bx, y: by }, source: 'initial', label: 'AB' }
+        {
+          id: "ref-A",
+          type: "point",
+          pt: { x: ax, y: ay },
+          source: "initial",
+          label: "A",
+        },
+        {
+          id: "ref-B",
+          type: "point",
+          pt: { x: bx, y: by },
+          source: "initial",
+          label: "B",
+        },
+        {
+          id: "ref-AB",
+          type: "line",
+          p1: { x: ax, y: ay },
+          p2: { x: bx, y: by },
+          source: "initial",
+          label: "AB",
+        },
       ];
-    }
+    },
   },
   {
-    id: 'mission-4',
-    stage: 2,
-    title: '각의 이등분선 작도',
-    description: '주어진 각 ABC의 이등분선을 작도하세요.',
-    referenceLabels: { 'B': 'B', 'BA': 'BA', 'BC': 'BC' },
-    validate: validateMission4,
-    initialGeometries: () => {
-      const bx = r(-80, 0), by = r(-50, 50);
-      const ax = bx + r(-100, -50), ay = by + r(-120, -50);
-      const cx = bx + r(100, 150), cy = by + r(-30, 50);
+    id: "mission-1-4",
+    stage: 1,
+    level: 4,
+    title: "미션 1-4: 정육각형의 작도",
+    description:
+      "주어진 중심 O와 반지름 선분 OA를 이용하여 완벽한 정육각형을 작도하세요. (외곽선 6개 연결, 중심점과의 연결선 6개 필요)",
+    optimalCompassCount: 6,
+    targetTimeSec: 90,
+    referenceLabels: { O: "O", OA: "OA" },
+    validate: validateMission1_4,
+    initialGeometries: (): Geometry[] => {
+      const ox = r(-20, 20),
+        oy = r(-20, 20);
+      const ax = ox + r(60, 100),
+        ay = oy;
       return [
-        { id: 'ref-B', type: 'point', pt: { x: bx, y: by }, source: 'initial', label: 'B' },
-        { id: 'ref-A', type: 'point', pt: { x: ax, y: ay }, source: 'initial', label: 'A' },
-        { id: 'ref-C', type: 'point', pt: { x: cx, y: cy }, source: 'initial', label: 'C' },
-        { id: 'ref-BA', type: 'line', p1: { x: bx, y: by }, p2: { x: ax, y: ay }, source: 'initial', label: 'BA' },
-        { id: 'ref-BC', type: 'line', p1: { x: bx, y: by }, p2: { x: cx, y: cy }, source: 'initial', label: 'BC' }
+        {
+          id: "ref-O",
+          type: "point",
+          pt: { x: ox, y: oy },
+          source: "initial",
+          label: "O",
+        },
+        {
+          id: "ref-A",
+          type: "point",
+          pt: { x: ax, y: ay },
+          source: "initial",
+          label: "A",
+        },
+        {
+          id: "ref-OA",
+          type: "line",
+          p1: { x: ox, y: oy },
+          p2: { x: ax, y: ay },
+          source: "initial",
+          label: "OA",
+        },
       ];
-    }
+    },
   },
-  {
-    id: 'mission-5',
-    stage: 3,
-    title: '외부의 점에서 수선 작도',
-    description: '직선 밖의 점 P에서 직선 l에 내린 수선을 작도하세요.',
-    referenceLabels: { 'P': 'P', 'L': 'L' },
-    validate: validateMission5,
-    initialGeometries: () => {
-      const py = r(-150, -80);
-      const px = r(-50, 50);
-      const lineY = r(0, 100);
-      const angle = r(-0.2, 0.2); // slight tilt
-      const dx = 200 * Math.cos(angle);
-      const dy = 200 * Math.sin(angle);
-      return [
-        { id: 'ref-P', type: 'point', pt: { x: px, y: py }, source: 'initial', label: 'P' },
-        { id: 'ref-L', type: 'line', p1: { x: px - dx, y: lineY - dy }, p2: { x: px + dx, y: lineY + dy }, source: 'initial', label: 'L' }
-      ];
-    }
-  },
-  {
-    id: 'mission-6',
-    stage: 3,
-    title: '직선 위의 점에서 수선 작도',
-    description: '직선 l 위의 점 P를 지나는 수선을 작도하세요.',
-    referenceLabels: { 'P': 'P', 'L': 'L' },
-    validate: validateMission6,
-    initialGeometries: () => {
-      const py = r(-20, 20);
-      const px = r(-50, 50);
-      const angle = r(-0.2, 0.2); // slight tilt
-      const dx = 200 * Math.cos(angle);
-      const dy = 200 * Math.sin(angle);
-      return [
-        { id: 'ref-L', type: 'line', p1: { x: px - dx, y: py - dy }, p2: { x: px + dx, y: py + dy }, source: 'initial', label: 'L' },
-        { id: 'ref-P', type: 'point', pt: { x: px, y: py }, source: 'initial', label: 'P' }
-      ];
-    }
-  }
 ];

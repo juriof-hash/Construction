@@ -1,80 +1,95 @@
-import { useReducer, useCallback } from 'react';
-import { MissionDefinition, ValidationResult, GeometryObject } from '../types/mission';
+import { useReducer, useCallback } from "react";
+import { GeometryObject } from "../types/mission";
+import {
+  ChallengeMissionData,
+  ChallengeValidationResult,
+  PlayerStats,
+} from "../types/challenge";
 
 type ChallengeState = {
   currentMissionIndex: number;
-  lastResult: ValidationResult | null;
-  status: 'idle' | 'checking' | 'success' | 'failure';
+  lastResult: ChallengeValidationResult | null;
+  status: "idle" | "checking" | "success" | "failure";
 };
 
-type ChallengeAction = 
-  | { type: 'CHECK_ANSWER'; payload: ValidationResult }
-  | { type: 'NEXT_MISSION' }
-  | { type: 'SET_MISSION'; payload: number }
-  | { type: 'RESET' };
+type ChallengeAction =
+  | { type: "CHECK_ANSWER"; payload: ChallengeValidationResult }
+  | { type: "NEXT_MISSION" }
+  | { type: "SET_MISSION"; payload: number }
+  | { type: "RESET" };
 
 const initialState: ChallengeState = {
   currentMissionIndex: 0,
   lastResult: null,
-  status: 'idle',
+  status: "idle",
 };
 
-function challengeReducer(state: ChallengeState, action: ChallengeAction): ChallengeState {
+function challengeReducer(
+  state: ChallengeState,
+  action: ChallengeAction,
+): ChallengeState {
   switch (action.type) {
-    case 'CHECK_ANSWER':
+    case "CHECK_ANSWER":
       return {
         ...state,
         lastResult: action.payload,
-        status: action.payload.isSuccess ? 'success' : 'failure',
+        status: action.payload.isSuccess ? "success" : "failure",
       };
-    case 'NEXT_MISSION':
+    case "NEXT_MISSION":
       return {
         ...state,
         currentMissionIndex: state.currentMissionIndex + 1,
         lastResult: null,
-        status: 'idle',
+        status: "idle",
       };
-    case 'SET_MISSION':
+    case "SET_MISSION":
       return {
         ...state,
         currentMissionIndex: action.payload,
         lastResult: null,
-        status: 'idle',
+        status: "idle",
       };
-    case 'RESET':
+    case "RESET":
       return {
         ...state,
         currentMissionIndex: 0,
         lastResult: null,
-        status: 'idle',
+        status: "idle",
       };
     default:
       return state;
   }
 }
 
-export function useChallengeMode(missions: MissionDefinition[]) {
+export function useChallengeMode(missions: ChallengeMissionData[]) {
   const [state, dispatch] = useReducer(challengeReducer, initialState);
 
-  const checkAnswer = useCallback((objects: GeometryObject[], refs: Record<string, GeometryObject>) => {
-    const currentMission = missions[state.currentMissionIndex];
-    if (!currentMission) return;
-    
-    // Call the validation logic
-    const result = currentMission.validate(objects, refs);
-    dispatch({ type: 'CHECK_ANSWER', payload: result });
-  }, [missions, state.currentMissionIndex]);
+  const checkAnswer = useCallback(
+    (
+      objects: GeometryObject[],
+      refs: Record<string, GeometryObject>,
+      stats: PlayerStats,
+    ) => {
+      const currentMission = missions[state.currentMissionIndex];
+      if (!currentMission) return;
+
+      // Call the validation logic
+      const result = currentMission.validate(objects, refs, stats);
+      dispatch({ type: "CHECK_ANSWER", payload: result });
+    },
+    [missions, state.currentMissionIndex],
+  );
 
   const nextMission = useCallback(() => {
-    dispatch({ type: 'NEXT_MISSION' });
+    dispatch({ type: "NEXT_MISSION" });
   }, []);
 
   const gotoMission = useCallback((index: number) => {
-    dispatch({ type: 'SET_MISSION', payload: index });
+    dispatch({ type: "SET_MISSION", payload: index });
   }, []);
 
   const resetChallenge = useCallback(() => {
-    dispatch({ type: 'RESET' });
+    dispatch({ type: "RESET" });
   }, []);
 
   return {
