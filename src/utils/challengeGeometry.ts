@@ -1,11 +1,14 @@
-import { GeometryObject, Vec2 } from '../types/mission';
-import { Geometry } from '../types/geometry';
+import { GeometryObject, Vec2 } from "../types/mission";
+import { Geometry } from "../types/geometry";
 
 export const DISTANCE_EPSILON = 1e-3;
 export const ANGLE_EPSILON = 1e-4;
 
 // 점 a, b를 잇는 무한 직선을 (point, direction) 형태로 표준화
-export function toInfiniteLine(obj: GeometryObject): { point: Vec2; direction: Vec2 } {
+export function toInfiniteLine(obj: GeometryObject): {
+  point: Vec2;
+  direction: Vec2;
+} {
   const p1 = obj.points[0];
   const p2 = obj.points[1];
   const direction = normalize({ x: p2.x - p1.x, y: p2.y - p1.y });
@@ -18,7 +21,10 @@ export function distance(a: Vec2, b: Vec2): number {
 }
 
 // 점 p 에서 무한 직선까지의 수직 거리
-export function pointToLineDistance(p: Vec2, line: { point: Vec2; direction: Vec2 }): number {
+export function pointToLineDistance(
+  p: Vec2,
+  line: { point: Vec2; direction: Vec2 },
+): number {
   const ap = { x: p.x - line.point.x, y: p.y - line.point.y };
   // AP를 직교 벡터에 투영시켜 최소 거리를 구함
   const normal = { x: -line.direction.y, y: line.direction.x };
@@ -26,7 +32,10 @@ export function pointToLineDistance(p: Vec2, line: { point: Vec2; direction: Vec
 }
 
 // 점 p 가 무한 직선 위에 있는지 (DISTANCE_EPSILON 이용)
-export function isPointOnLine(p: Vec2, line: { point: Vec2; direction: Vec2 }): boolean {
+export function isPointOnLine(
+  p: Vec2,
+  line: { point: Vec2; direction: Vec2 },
+): boolean {
   return pointToLineDistance(p, line) <= DISTANCE_EPSILON;
 }
 
@@ -49,13 +58,17 @@ export function normalize(v: Vec2): Vec2 {
 
 // 두 방향벡터가 이루는 사잇각을 0~π(0~180도) 범위로 반환
 // 직선 비교 모드인 경우 예각(0~π/2)으로 보정
-export function angleBetweenVectors(v1: Vec2, v2: Vec2, options?: { asUndirectedLine?: boolean }): number {
+export function angleBetweenVectors(
+  v1: Vec2,
+  v2: Vec2,
+  options?: { asUndirectedLine?: boolean },
+): number {
   const dot = v1.x * v2.x + v1.y * v2.y;
   const mag1 = Math.sqrt(v1.x * v1.x + v1.y * v1.y);
   const mag2 = Math.sqrt(v2.x * v2.x + v2.y * v2.y);
-  
+
   let angle = Math.acos(Math.max(-1, Math.min(1, dot / (mag1 * mag2))));
-  
+
   // 방향성이 없는 직선 비교일 경우 항상 π/2 (90도) 이하로 반환
   if (options?.asUndirectedLine) {
     if (angle > Math.PI / 2) {
@@ -72,18 +85,46 @@ export function midpoint(a: Vec2, b: Vec2): Vec2 {
 
 // 작도 엔진 상태(Geometry)를 미션 검증용 상태(GeometryObject)로 매핑하는 어댑터
 export function mapGeometryToGeometryObject(geom: Geometry): GeometryObject {
-  const source = geom.source || 'user';
+  const source = geom.source || "user";
   const label = geom.label;
-  
+
   switch (geom.type) {
-    case 'point':
-      return { id: geom.id, type: 'point', points: [geom.pt], source, label };
-    case 'line':
-      return { id: geom.id, type: 'segment', points: [geom.p1, geom.p2], source, label };
-    case 'circle':
-      return { id: geom.id, type: 'circle', points: [geom.center], radius: geom.r, source, label };
-    case 'arc':
-      // The drawing mode only does startAngle/sweepAngle. We map it slightly to standard start/end but keep sweep logic minimal if needed
-      return { id: geom.id, type: 'arc', points: [geom.center], radius: geom.r, startAngle: geom.startAngle, endAngle: geom.startAngle + geom.sweepAngle, source, label };
+    case "point":
+      return { id: geom.id, type: "point", points: [geom.pt], source, label };
+    case "line":
+      // geometry.ts의 LineGeom은 p1, p2만을 가지며 엔진에 무한 직선 타입이나 필드가 존재하지 않습니다.
+      // 따라서 모든 line은 기능적으로 유한 선분이므로 'segment'로 매핑하는 것이 유일한 해답입니다.
+      return {
+        id: geom.id,
+        type: "segment",
+        points: [geom.p1, geom.p2],
+        source,
+        label,
+      };
+    case "circle":
+      return {
+        id: geom.id,
+        type: "circle",
+        points: [geom.center],
+        radius: geom.r,
+        source,
+        label,
+      };
+    case "arc":
+      return {
+        id: geom.id,
+        type: "arc",
+        points: [geom.center],
+        radius: geom.r,
+        startAngle: geom.startAngle,
+        endAngle: geom.startAngle + geom.sweepAngle,
+        source,
+        label,
+      };
+    default:
+      const _exhaustiveCheck: never = geom;
+      throw new Error(
+        `Unhandled geometry type: ${(_exhaustiveCheck as any).type}`,
+      );
   }
 }
