@@ -26,7 +26,8 @@ const initialState: State = {
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case 'ADD_GEOMETRY': {
-      const newGeoms = [...state.geometries, action.payload];
+      const payloadWithSource = { ...action.payload, source: action.payload.source || 'user' } as typeof action.payload;
+      const newGeoms = [...state.geometries, payloadWithSource];
       const newHistory = state.history.slice(0, state.historyIndex + 1);
       newHistory.push(newGeoms);
       return { 

@@ -204,18 +204,19 @@ export const getSnapCandidates = (
         { point: g.pt, type: "point", priority: 1 },
         mergeEps,
       );
-    } else if (g.type === "line" || g.type === "segment") {
+    } else if (g.type === "line" || (g.type as any) === "segment") {
+      const line = g as any;
       pushDeduped(
         candidates,
-        { point: g.p1, type: "endpoint", priority: 2 },
+        { point: line.p1, type: "endpoint", priority: 2 },
         mergeEps,
       );
       pushDeduped(
         candidates,
-        { point: g.p2, type: "endpoint", priority: 2 },
+        { point: line.p2, type: "endpoint", priority: 2 },
         mergeEps,
       );
-      lines.push({ p1: g.p1, p2: g.p2 });
+      lines.push({ p1: line.p1, p2: line.p2 });
     } else if (g.type === "circle" || g.type === "arc") {
       pushDeduped(
         candidates,
