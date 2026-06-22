@@ -148,10 +148,10 @@ export const ChallengeModeUI: React.FC = () => {
       if (json.status === "success") {
         setSubmitSuccess(true);
       } else {
-        alert("기록 저장에 실패했습니다.");
+        alert("기록 저장에 실패했습니다. " + (json.message || ""));
       }
-    } catch (e) {
-      alert("기록 저장 중 오류가 발생했습니다.");
+    } catch (e: any) {
+      alert("기록 저장 중 오류가 발생했습니다. " + e.message);
     } finally {
       setIsSubmitting(false);
     }

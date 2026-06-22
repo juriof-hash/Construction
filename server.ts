@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -15,7 +16,7 @@ async function startServer() {
     const API_SECRET = process.env.VITE_API_SECRET || process.env.API_SECRET;
     
     if (!GAS_URL || !API_SECRET) {
-      return res.status(500).json({ error: "Internal Server Error: Missing environment variables" });
+      return res.status(500).json({ status: "error", message: "Internal Server Error: Missing environment variables" });
     }
   
     try {
@@ -28,11 +29,17 @@ async function startServer() {
         body: JSON.stringify(payload),
       });
   
-      const data = await response.json();
-      return res.status(200).json(data);
-    } catch (error) {
+      const responseText = await response.text();
+      try {
+        const data = JSON.parse(responseText);
+        return res.status(200).json(data);
+      } catch (parseError) {
+        console.error("Failed to parse GAS response:", responseText);
+        return res.status(502).json({ status: "error", message: "Invalid response from GAS: " + responseText.substring(0, 100) });
+      }
+    } catch (error: any) {
       console.error("Leaderboard API Error:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+      return res.status(500).json({ status: "error", message: error.message });
     }
   });
 
@@ -41,7 +48,7 @@ async function startServer() {
     const API_SECRET = process.env.VITE_API_SECRET || process.env.API_SECRET;
     
     if (!GAS_URL || !API_SECRET) {
-      return res.status(500).json({ error: "Internal Server Error: Missing environment variables" });
+      return res.status(500).json({ status: "error", message: "Internal Server Error: Missing environment variables" });
     }
   
     try {
@@ -61,11 +68,17 @@ async function startServer() {
         body: JSON.stringify(payload),
       });
   
-      const data = await response.json();
-      return res.status(200).json(data);
-    } catch (error) {
+      const responseText = await response.text();
+      try {
+        const data = JSON.parse(responseText);
+        return res.status(200).json(data);
+      } catch (parseError) {
+        console.error("Failed to parse GAS response:", responseText);
+        return res.status(502).json({ status: "error", message: "Invalid response from GAS: " + responseText.substring(0, 100) });
+      }
+    } catch (error: any) {
       console.error("Leaderboard API Error:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
+      return res.status(500).json({ status: "error", message: error.message });
     }
   });
 

@@ -52,9 +52,10 @@ function doPost(e) {
       safeUserName = safeUserName.substring(0, 20);
       
       const timestamp = body.timestamp || new Date().toISOString();
+      const safeStage = "'" + body.stage; // Prevent date parsing
       
       // 순서: stage(0), elapsedTime(1), userName(2), timestamp(3)
-      sheet.appendRow([body.stage, elapsedTime, safeUserName, timestamp]);
+      sheet.appendRow([safeStage, elapsedTime, safeUserName, timestamp]);
       
       return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
         .setMimeType(ContentService.MimeType.JSON);
