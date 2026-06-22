@@ -201,16 +201,16 @@ export const GeometryApp = () => {
         setShowGrid={setShowGrid}
       />
 
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-20 flex bg-white/90 backdrop-blur shadow rounded-xl p-1 border border-slate-200 pointer-events-auto">
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-md md:max-w-xl flex items-center gap-2 bg-white/90 backdrop-blur shadow rounded-xl p-1 border border-slate-200 pointer-events-auto">
         <button
           onClick={() => setAppMode("free")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${appMode === "free" ? "bg-slate-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
+          className={`flex-1 min-w-[75px] whitespace-nowrap px-2 py-2.5 rounded-lg text-sm md:text-base font-semibold transition-colors ${appMode === "free" ? "bg-slate-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
         >
           자유 모드
         </button>
         <button
           onClick={() => setAppMode("challenge")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${appMode === "challenge" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
+          className={`flex-1 min-w-[75px] whitespace-nowrap px-2 py-2.5 rounded-lg text-sm md:text-base font-semibold transition-colors ${appMode === "challenge" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
         >
           도전 모드
         </button>
