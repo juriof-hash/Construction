@@ -5,7 +5,7 @@ interface LeaderboardViewProps {
   currentStage?: string;
 }
 
-export function LeaderboardView({ currentStage = "stage-2" }: LeaderboardViewProps) {
+export function LeaderboardView({ currentStage }: LeaderboardViewProps) {
   const [records, setRecords] = useState<LeaderboardRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

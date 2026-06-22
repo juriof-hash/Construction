@@ -6,6 +6,7 @@ import { useGlobalSpacebar } from "../hooks/useGlobalSpacebar";
 import { ObjectLayer } from "./ObjectLayer";
 import { Toolbar } from "./Toolbar";
 import { ChallengeModeUI } from "./ChallengeModeUI";
+import { LeaderboardView } from "./LeaderboardView";
 import { ToolType } from "../types/tool";
 
 export const GeometryApp = () => {
@@ -15,7 +16,7 @@ export const GeometryApp = () => {
   const [activeTool, setActiveTool] = useState<ToolType>("compass");
   const { activeMode, setMode, mode } = useInputMode();
 
-  const [appMode, setAppMode] = useState<"free" | "challenge">("challenge");
+  const [appMode, setAppMode] = useState<"free" | "challenge" | "leaderboard">("challenge");
 
   const gRef = useRef<SVGGElement>(null);
   const isSpacePressed = useGlobalSpacebar();
@@ -214,9 +215,20 @@ export const GeometryApp = () => {
         >
           도전 모드
         </button>
+        <button
+          onClick={() => setAppMode("leaderboard")}
+          className={`flex-1 min-w-[75px] whitespace-nowrap px-2 py-2.5 rounded-lg text-sm md:text-base font-semibold transition-colors ${appMode === "leaderboard" ? "bg-yellow-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
+        >
+          명예의 전당
+        </button>
       </div>
 
       {appMode === "challenge" && <ChallengeModeUI />}
+      {appMode === "leaderboard" && (
+        <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[90%] max-w-md z-30 bg-white shadow-xl rounded-2xl p-4 max-h-[80vh] overflow-y-auto">
+          <LeaderboardView />
+        </div>
+      )}
 
       {/* Status Text Indicator */}
       {statusText && !isSpacePressed && (
