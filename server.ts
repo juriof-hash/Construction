@@ -1,4 +1,6 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config(); // Load .env
+dotenv.config({ path: ".env.example" }); // Fallback to .env.example
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";

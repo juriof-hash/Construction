@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { LeaderboardRecord } from '../types/leaderboard';
+import { MISSIONS } from '../missions';
 
 interface LeaderboardViewProps {
   currentStage?: string;
@@ -10,6 +11,7 @@ export function LeaderboardView({ currentStage }: LeaderboardViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'today' | 'all-time'>('today');
+  const [selectedStage, setSelectedStage] = useState<string>(currentStage || "all-clear");
 
   useEffect(() => {
     let isMounted = true;
@@ -52,24 +54,73 @@ export function LeaderboardView({ currentStage }: LeaderboardViewProps) {
 
   const filteredRecords = useMemo(() => {
     const todayKST = toKSTDateString(new Date());
-    
-    // 프론트 메모리에서 필터링 (서버 재호출 없음)
-    const relevantRecords = records.filter(r => {
-      if (currentStage && r.stage !== currentStage) return false;
-      if (activeTab === 'today') {
-        return toKSTDateString(new Date(r.timestamp)) === todayKST;
-      }
-      return true;
-    });
+
+    let relevantRecords: LeaderboardRecord[] = [];
+
+    if (selectedStage === "all-clear") {
+      // 모든 스테이지 클리어
+      // 이름별로 각 스테이지의 최소 시간을 수집
+      const userMaps: Record<string, Record<string, number>> = {};
+      const userTimestamps: Record<string, string> = {};
+      
+      const filteredByTab = activeTab === 'today' 
+        ? records.filter(r => toKSTDateString(new Date(r.timestamp)) === todayKST)
+        : records;
+
+      filteredByTab.forEach(r => {
+        if (!userMaps[r.userName]) userMaps[r.userName] = {};
+        
+        // 해당 스테이지 최고 기록(최소 시간) 유지
+        if (!userMaps[r.userName][r.stage] || userMaps[r.userName][r.stage] > r.elapsedTime) {
+          userMaps[r.userName][r.stage] = r.elapsedTime;
+          // 가장 최근 혹은 빠른 시간 중 어떤 거? 일단 마지막 갱신 timestamp로 대략 저장
+          userTimestamps[r.userName] = r.timestamp; 
+        }
+      });
+
+      const requiredMissionCount = MISSIONS.length;
+
+      Object.keys(userMaps).forEach(userName => {
+        const userStages = userMaps[userName];
+        const clearedStages = Object.keys(userStages);
+        // 모든 미션을 푼 경우
+        if (clearedStages.length >= requiredMissionCount) {
+          // 총 시간 계산
+          const totalTime = clearedStages.reduce((sum, stageKey) => {
+            // 미션 목록에 있는 것만 포함
+            if (MISSIONS.some(m => m.id === stageKey)) {
+              return sum + userStages[stageKey];
+            }
+            return sum;
+          }, 0);
+          
+          relevantRecords.push({
+            stage: "all-clear",
+            userName,
+            elapsedTime: totalTime,
+            timestamp: userTimestamps[userName]
+          });
+        }
+      });
+    } else {
+      // 특정 스테이지 기록
+      const filteredByStage = records.filter(r => r.stage === selectedStage);
+      relevantRecords = filteredByStage.filter(r => {
+        if (activeTab === 'today') {
+          return toKSTDateString(new Date(r.timestamp)) === todayKST;
+        }
+        return true;
+      });
+    }
 
     // ② [방어] 정렬 시 원본 배열 변경 방지: 복사 후 정렬 (elapsedTime 오름차순, 동점 시 timestamp 빠른 순)
-    return [...relevantRecords].sort((a, b) => {
+    return relevantRecords.sort((a, b) => {
       if (a.elapsedTime !== b.elapsedTime) {
         return a.elapsedTime - b.elapsedTime;
       }
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     });
-  }, [records, activeTab, currentStage]);
+  }, [records, activeTab, selectedStage]);
 
   // ③ [방어] getRankStyle 반환 타입을 string으로 명시하고 모든 분기에서 반환하여 undefined 추론 방지
   const getRankStyle = (index: number, tab: 'today' | 'all-time'): string => {
@@ -96,6 +147,22 @@ export function LeaderboardView({ currentStage }: LeaderboardViewProps) {
 
   return (
     <div className="w-full max-w-md mx-auto p-4 flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-semibold text-slate-700">스테이지 선택</label>
+        <select 
+          value={selectedStage} 
+          onChange={e => setSelectedStage(e.target.value)}
+          className="w-full p-2.5 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-400 text-sm font-medium"
+        >
+          <option value="all-clear">전체 클리어 (All Clear)</option>
+          {MISSIONS.map(m => (
+            <option key={m.id} value={m.id}>
+              {m.title || m.id}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* 모바일 최적화: 터치 타겟 최소 44px (min-h-[44px]) */}
       <div className="flex bg-slate-100 rounded-lg p-1">
         <button
