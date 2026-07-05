@@ -52,10 +52,15 @@ export const ChallengeModeUI: React.FC = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [userName, setUserName] = useState(() => {
-    return localStorage.getItem("userName") || "";
+    try {
+      return localStorage.getItem("userName") || "";
+    } catch (e) {
+      return "";
+    }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (currentMission && currentMission.initialGeometries) {
@@ -129,9 +134,14 @@ export const ChallengeModeUI: React.FC = () => {
 
   const handleSubmitScore = async () => {
     if (!userName.trim()) return;
-    localStorage.setItem("userName", userName);
+    try {
+      localStorage.setItem("userName", userName);
+    } catch (e) {
+      console.warn("localStorage disabled");
+    }
     setIsSubmitting(true);
     setSubmitSuccess(false);
+    setSubmitError("");
 
     try {
       const res = await fetch("/api/leaderboard", {
@@ -148,10 +158,10 @@ export const ChallengeModeUI: React.FC = () => {
       if (json.status === "success") {
         setSubmitSuccess(true);
       } else {
-        alert("기록 저장에 실패했습니다. " + (json.message || ""));
+        setSubmitError("기록 저장에 실패했습니다. " + (json.message || ""));
       }
     } catch (e: any) {
-      alert("기록 저장 중 오류가 발생했습니다. " + e.message);
+      setSubmitError("기록 저장 중 오류가 발생했습니다. " + e.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -272,6 +282,9 @@ export const ChallengeModeUI: React.FC = () => {
                   {isSubmitting ? "저장 중..." : "기록 등록"}
                 </button>
               </div>
+              {submitError && (
+                <div className="text-red-500 text-xs mt-1">{submitError}</div>
+              )}
             </div>
           ) : (
             <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-center text-sm font-medium text-green-700">
