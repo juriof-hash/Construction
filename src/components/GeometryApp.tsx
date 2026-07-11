@@ -8,6 +8,7 @@ import { Toolbar } from "./Toolbar";
 import { ChallengeModeUI } from "./ChallengeModeUI";
 import { LeaderboardView } from "./LeaderboardView";
 import { ToolType } from "../types/tool";
+import { StylePopup } from "./StylePopup";
 
 export const GeometryApp = () => {
   const { state, dispatch } = useGeometry();
@@ -28,6 +29,16 @@ export const GeometryApp = () => {
     startView: { x: number; y: number; scale: number };
   } | null>(null);
 
+  const [popupPos, setPopupPos] = useState<{x: number, y: number} | null>(null);
+
+  // Clear selection when tool changes
+  useEffect(() => {
+    if (activeTool !== 'select') {
+      dispatch({ type: 'SELECT_GEOMETRY', payload: null });
+      setPopupPos(null);
+    }
+  }, [activeTool, dispatch]);
+
   const { handlers, preview, statusText, touchOffsetIndicator } =
     useToolManager(
       activeTool,
@@ -38,6 +49,7 @@ export const GeometryApp = () => {
       view,
       dispatch,
       activeMode,
+      setPopupPos
     );
 
   const handleTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
@@ -194,6 +206,8 @@ export const GeometryApp = () => {
   return (
     <div className="w-full h-screen overflow-hidden relative bg-slate-50 font-sans selection:bg-slate-200">
       <Toolbar
+        appMode={appMode}
+        setAppMode={setAppMode}
         activeTool={activeTool}
         setTool={setActiveTool}
         inputMode={mode}
@@ -201,27 +215,6 @@ export const GeometryApp = () => {
         showGrid={showGrid}
         setShowGrid={setShowGrid}
       />
-
-      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-20 w-[90%] max-w-md md:max-w-xl flex items-center gap-2 bg-white/90 backdrop-blur shadow rounded-xl p-1 border border-slate-200 pointer-events-auto">
-        <button
-          onClick={() => setAppMode("free")}
-          className={`flex-1 min-w-[75px] whitespace-nowrap px-2 py-2.5 rounded-lg text-sm md:text-base font-semibold transition-colors ${appMode === "free" ? "bg-slate-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
-        >
-          자유 모드
-        </button>
-        <button
-          onClick={() => setAppMode("challenge")}
-          className={`flex-1 min-w-[75px] whitespace-nowrap px-2 py-2.5 rounded-lg text-sm md:text-base font-semibold transition-colors ${appMode === "challenge" ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
-        >
-          도전 모드
-        </button>
-        <button
-          onClick={() => setAppMode("leaderboard")}
-          className={`flex-1 min-w-[75px] whitespace-nowrap px-2 py-2.5 rounded-lg text-sm md:text-base font-semibold transition-colors ${appMode === "leaderboard" ? "bg-yellow-500 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`}
-        >
-          명예의 전당
-        </button>
-      </div>
 
       {appMode === "challenge" && <ChallengeModeUI />}
       {appMode === "leaderboard" && (
@@ -233,7 +226,7 @@ export const GeometryApp = () => {
       {/* Status Text Indicator */}
       {statusText && !isSpacePressed && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-          <div className="bg-slate-800/90 text-white/90 px-4 py-2 rounded-full text-sm font-medium tracking-wide shadow backdrop-blur transition-opacity">
+          <div className="bg-slate-800/90 text-white/90 px-4 py-2 rounded-full text-sm font-medium tracking-wide shadow backdrop-blur transition-opacity whitespace-nowrap">
             {statusText}
           </div>
         </div>
@@ -300,10 +293,37 @@ export const GeometryApp = () => {
 
         {/* Global Transform Layer has no explicit transforms because viewBox handles it */}
         <g ref={gRef}>
-          <ObjectLayer geometries={geometries} />
+          <ObjectLayer geometries={geometries} selectedId={state.selectedId} />
           {preview}
         </g>
       </svg>
+      
+      {/* Style Popup */}
+      {popupPos && state.selectedId && (() => {
+        const selectedGeom = geometries.find(g => g.id === state.selectedId);
+        if (!selectedGeom) return null;
+        
+        return (
+          <StylePopup 
+            x={popupPos.x} 
+            y={popupPos.y} 
+            style={selectedGeom.style || {}} 
+            label={selectedGeom.type === 'point' ? selectedGeom.label : undefined}
+            disableLabelEdit={selectedGeom.source === 'initial'}
+            onLabelCommit={(label) => dispatch({ type: 'UPDATE_GEOMETRY_LABEL', payload: { id: state.selectedId!, label } })}
+            onChange={(style) => dispatch({ type: 'UPDATE_GEOMETRY_STYLE', payload: { id: state.selectedId!, style } })}
+            onCommit={(style) => dispatch({ type: 'UPDATE_GEOMETRY_STYLE', payload: { id: state.selectedId!, style } })}
+            onDelete={selectedGeom.source === 'user' ? () => {
+              dispatch({ type: 'REMOVE_GEOMETRY', payload: state.selectedId! });
+              setPopupPos(null);
+            } : undefined}
+            onClose={() => {
+              dispatch({ type: 'SELECT_GEOMETRY', payload: null });
+              setPopupPos(null);
+            }}
+          />
+        );
+      })()}
     </div>
   );
 };

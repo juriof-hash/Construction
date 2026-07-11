@@ -17,6 +17,7 @@ export const useToolManager = (
   view: any,
   dispatch: any,
   activeMode: "mouse" | "touch",
+  setPopupPos: (pos: { x: number; y: number } | null) => void
 ): ToolHookResult => {
   // Shared snap engine wrapper injects current geoms and scale
   const getSnap = (pt: Point2D) => {
@@ -27,7 +28,7 @@ export const useToolManager = (
   const passedActiveTool = disabledTools ? "pan" : activeTool;
 
   // Rule: useToolManager calls all hooks unconditionally without conditional flow (no `if` statements skipping hooks).
-  const select = useSelectTool(passedActiveTool === "select", gRef, dispatch);
+  const select = useSelectTool(passedActiveTool === "select", gRef, dispatch, geometries, view.scale, setPopupPos);
   const point = usePointTool(
     passedActiveTool === "point",
     gRef,

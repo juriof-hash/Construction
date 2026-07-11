@@ -6,8 +6,8 @@ import { GeometryObject } from "../types/mission";
 import { Geometry } from "../types/geometry";
 import { mapGeometryToGeometryObject } from "../utils/challengeGeometry";
 import { FeedbackPanel } from "./FeedbackPanel";
-import { Target, ArrowRight, RotateCcw, Clock, Circle } from "lucide-react";
-import { motion } from "motion/react";
+import { Target, ArrowRight, RotateCcw, Clock, Circle, ChevronDown, ChevronUp } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 const computeGeomsAABB = (geoms: Geometry[]) => {
   let minX = Infinity,
@@ -49,6 +49,22 @@ export const ChallengeModeUI: React.FC = () => {
   const { state: geomState, dispatch: geomDispatch } = useGeometry();
 
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(true);
+  const expandTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (currentMission) {
+      setIsExpanded(true);
+      if (expandTimeoutRef.current) clearTimeout(expandTimeoutRef.current);
+      expandTimeoutRef.current = setTimeout(() => {
+        setIsExpanded(false);
+      }, 3000);
+    }
+    return () => {
+      if (expandTimeoutRef.current) clearTimeout(expandTimeoutRef.current);
+    };
+  }, [currentMission?.id, state.currentMissionIndex]);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [userName, setUserName] = useState(() => {
@@ -172,9 +188,9 @@ export const ChallengeModeUI: React.FC = () => {
       <motion.div
         drag
         dragMomentum={false}
-        className="absolute left-6 top-6 w-80 bg-white/90 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-6 z-20 cursor-move"
+        className="absolute left-0 right-0 mx-auto top-20 md:top-24 w-[calc(100vw-2rem)] md:w-80 bg-white/5 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-5 md:p-6 z-20 cursor-move"
       >
-        <h2 className="text-xl font-bold text-slate-800 mb-2">
+        <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-2">
           모든 미션 완료!
         </h2>
         <p className="text-sm text-slate-600 mb-4">
@@ -182,7 +198,7 @@ export const ChallengeModeUI: React.FC = () => {
         </p>
         <button
           onClick={resetChallenge}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 md:py-2.5 rounded-xl transition-colors cursor-pointer"
         >
           <RotateCcw size={18} /> 시작으로 돌아가기
         </button>
@@ -194,122 +210,146 @@ export const ChallengeModeUI: React.FC = () => {
     <motion.div
       drag
       dragMomentum={false}
-      className="absolute left-6 top-6 w-96 bg-white/95 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-5 z-20 flex flex-col pointer-events-auto cursor-drag"
+      className="absolute left-0 right-0 mx-auto top-20 md:top-24 w-[calc(100vw-2rem)] md:w-96 bg-white/10 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-4 md:p-5 z-20 flex flex-col pointer-events-auto cursor-drag"
     >
-      <div className="flex items-center gap-2 mb-3 cursor-move">
-        <select
-          className="bg-blue-100/50 hover:bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold tracking-wide border-none outline-none cursor-pointer appearance-none"
-          value={state.currentMissionIndex}
-          onChange={(e) => gotoMission(Number(e.target.value))}
-        >
-          {MISSIONS.map((m, i) => (
-            <option key={m.id} value={i}>
-              {m.title}
-            </option>
-          ))}
-        </select>
-        <div className="text-slate-400 text-sm font-medium">
-          {state.currentMissionIndex + 1} / {MISSIONS.length}
+      <div className="flex items-center justify-between mb-3 cursor-move">
+        <div className="relative flex items-center">
+          <select
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            value={state.currentMissionIndex}
+            onChange={(e) => gotoMission(Number(e.target.value))}
+          >
+            {MISSIONS.map((m, i) => (
+              <option key={m.id} value={i}>
+                {m.title}
+              </option>
+            ))}
+          </select>
+          <div className="bg-blue-100/50 hover:bg-blue-100 text-blue-700 px-2.5 py-1.5 rounded-md text-xs font-bold tracking-wide pointer-events-none flex items-center gap-1 shadow-sm">
+            다른 미션에 도전하세요! <span className="opacity-70 text-[10px]">▼</span>
+          </div>
         </div>
-      </div>
-
-      <h2 className="text-lg font-bold text-slate-800 mb-2 cursor-move">
-        {currentMission.title}
-      </h2>
-      <p className="text-sm text-slate-600 leading-relaxed mb-4 cursor-move">
-        {currentMission.description}
-      </p>
-
-      <div className="flex items-center gap-4 mb-5 border-t border-b border-slate-100 py-3 bg-slate-50/50 px-2">
-        <div className="flex items-center gap-1.5 text-slate-600">
+        
+        {/* Timer is always visible */}
+        <div className="flex items-center gap-1.5 text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100 shadow-sm">
           <Clock className="w-4 h-4" />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-bold tracking-tight">
             <span
               className={
                 elapsedSec > currentMission.targetTimeSec ? "text-red-500" : ""
               }
             >
-              {elapsedSec}s
-            </span>{" "}
-            / {currentMission.targetTimeSec}s
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 text-slate-600">
-          <Circle className="w-4 h-4" />
-          <span className="text-sm font-medium">
-            <span
-              className={
-                compassCount > currentMission.optimalCompassCount
-                  ? "text-red-500"
-                  : ""
-              }
-            >
-              {compassCount}회
-            </span>{" "}
-            / {currentMission.optimalCompassCount}회
+              {elapsedSec}
+            </span>
+            <span className="text-slate-400 text-xs mx-0.5">/</span>
+            <span className="text-slate-500">{currentMission.targetTimeSec}s</span>
           </span>
         </div>
       </div>
 
-      {state.status !== "success" ? (
-        <button
-          onClick={handleCheck}
-          className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer mt-2"
-        >
-          <Target size={18} /> 정답 확인
-        </button>
-      ) : (
-        <div className="flex flex-col gap-3 mt-2">
-          {!submitSuccess ? (
-            <div className="flex flex-col gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-              <label className="text-xs font-semibold text-blue-800">
-                명예의 전당 등록
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="이름을 입력하세요"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  maxLength={20}
-                  className="flex-1 px-3 py-1.5 text-sm border border-blue-200 rounded-lg outline-none focus:border-blue-400 bg-white"
-                />
+      <div 
+        className="flex items-center justify-between cursor-pointer group mb-1 py-1"
+        onClick={() => {
+          setIsExpanded(!isExpanded);
+          if (expandTimeoutRef.current) clearTimeout(expandTimeoutRef.current);
+        }}
+      >
+        <h2 className="text-lg font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+          {currentMission.title}
+        </h2>
+        {isExpanded ? <ChevronUp size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" /> : <ChevronDown size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" />}
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <p className="text-sm text-slate-600 leading-relaxed mb-4">
+              {currentMission.description}
+            </p>
+
+            <div className="flex items-center gap-4 mb-5 border-t border-b border-slate-100 py-3 bg-slate-50/50 px-2">
+              <div className="flex items-center gap-1.5 text-slate-600">
+                <Circle className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  <span
+                    className={
+                      compassCount > currentMission.optimalCompassCount
+                        ? "text-red-500"
+                        : ""
+                    }
+                  >
+                    {compassCount}회
+                  </span>{" "}
+                  / {currentMission.optimalCompassCount}회
+                </span>
+              </div>
+            </div>
+
+            {state.status !== "success" ? (
+              <button
+                onClick={handleCheck}
+                className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer mt-2"
+              >
+                <Target size={18} /> 정답 확인
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3 mt-2">
+                {!submitSuccess ? (
+                  <div className="flex flex-col gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                    <label className="text-xs font-semibold text-blue-800">
+                      명예의 전당 등록
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="이름을 입력하세요"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        maxLength={20}
+                        className="flex-1 px-3 py-1.5 text-sm border border-blue-200 rounded-lg outline-none focus:border-blue-400 bg-white"
+                      />
+                      <button
+                        onClick={handleSubmitScore}
+                        disabled={isSubmitting || !userName.trim()}
+                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                      >
+                        {isSubmitting ? "저장 중..." : "기록 등록"}
+                      </button>
+                    </div>
+                    {submitError && (
+                      <div className="text-red-500 text-xs mt-1">{submitError}</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-center text-sm font-medium text-green-700">
+                    🎉 훌륭합니다! 명예의 전당에 기록이 저장되었습니다.
+                  </div>
+                )}
                 <button
-                  onClick={handleSubmitScore}
-                  disabled={isSubmitting || !userName.trim()}
-                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                  onClick={isLastMission ? resetChallenge : nextMission}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
                 >
-                  {isSubmitting ? "저장 중..." : "기록 등록"}
+                  {isLastMission ? (
+                    <>
+                      <RotateCcw size={18} /> 처음부터 다시
+                    </>
+                  ) : (
+                    <>
+                      다음 미션 <ArrowRight size={18} />
+                    </>
+                  )}
                 </button>
               </div>
-              {submitError && (
-                <div className="text-red-500 text-xs mt-1">{submitError}</div>
-              )}
-            </div>
-          ) : (
-            <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-center text-sm font-medium text-green-700">
-              🎉 훌륭합니다! 명예의 전당에 기록이 저장되었습니다.
-            </div>
-          )}
-
-          <button
-            onClick={isLastMission ? resetChallenge : nextMission}
-            className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
-          >
-            {isLastMission ? (
-              <>
-                <RotateCcw size={18} /> 처음부터 다시
-              </>
-            ) : (
-              <>
-                다음 미션 <ArrowRight size={18} />
-              </>
             )}
-          </button>
-        </div>
-      )}
-
-      <FeedbackPanel result={state.lastResult} />
+            <FeedbackPanel result={state.lastResult} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

@@ -5,12 +5,19 @@ export interface Point2D {
   y: number;
 }
 
+export interface GeometryStyle {
+  color?: string;
+  strokeWidth?: number;
+  dashStyle?: 'solid' | 'dashed' | 'dotted';
+}
+
 export interface BaseGeom {
   id: GeomId;
   type: 'point' | 'line' | 'circle' | 'arc';
   selected?: boolean;
   source?: 'initial' | 'user';
   label?: string;
+  style?: GeometryStyle;
 }
 
 export interface PointGeom extends BaseGeom {
