@@ -290,66 +290,69 @@ export const ChallengeModeUI: React.FC = () => {
               </div>
             </div>
 
-            {state.status !== "success" ? (
-              <button
-                onClick={handleCheck}
-                className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer mt-2"
-              >
-                <Target size={18} /> 정답 확인
-              </button>
-            ) : (
-              <div className="flex flex-col gap-3 mt-2">
-                {!submitSuccess ? (
-                  <div className="flex flex-col gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                    <label className="text-xs font-semibold text-blue-800">
-                      명예의 전당 등록
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="이름을 입력하세요"
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)}
-                        maxLength={20}
-                        className="flex-1 px-3 py-1.5 text-sm border border-blue-200 rounded-lg outline-none focus:border-blue-400 bg-white"
-                      />
-                      <button
-                        onClick={handleSubmitScore}
-                        disabled={isSubmitting || !userName.trim()}
-                        className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap"
-                      >
-                        {isSubmitting ? "저장 중..." : "기록 등록"}
-                      </button>
-                    </div>
-                    {submitError && (
-                      <div className="text-red-500 text-xs mt-1">{submitError}</div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-center text-sm font-medium text-green-700">
-                    🎉 훌륭합니다! 명예의 전당에 기록이 저장되었습니다.
-                  </div>
-                )}
-                <button
-                  onClick={isLastMission ? resetChallenge : nextMission}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
-                >
-                  {isLastMission ? (
-                    <>
-                      <RotateCcw size={18} /> 처음부터 다시
-                    </>
-                  ) : (
-                    <>
-                      다음 미션 <ArrowRight size={18} />
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-            <FeedbackPanel result={state.lastResult} />
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="mt-2">
+        {state.status !== "success" ? (
+          <button
+            onClick={handleCheck}
+            className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer mt-2"
+          >
+            <Target size={18} /> 정답 확인
+          </button>
+        ) : (
+          <div className="flex flex-col gap-3 mt-2">
+            {!submitSuccess ? (
+              <div className="flex flex-col gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                <label className="text-xs font-semibold text-blue-800">
+                  명예의 전당 등록
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="이름을 입력하세요"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    maxLength={20}
+                    className="flex-1 px-3 py-1.5 text-sm border border-blue-200 rounded-lg outline-none focus:border-blue-400 bg-white"
+                  />
+                  <button
+                    onClick={handleSubmitScore}
+                    disabled={isSubmitting || !userName.trim()}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+                  >
+                    {isSubmitting ? "저장 중..." : "기록 등록"}
+                  </button>
+                </div>
+                {submitError && (
+                  <div className="text-red-500 text-xs mt-1">{submitError}</div>
+                )}
+              </div>
+            ) : (
+              <div className="p-3 bg-green-50 border border-green-100 rounded-xl text-center text-sm font-medium text-green-700">
+                🎉 훌륭합니다! 명예의 전당에 기록이 저장되었습니다.
+              </div>
+            )}
+            <button
+              onClick={isLastMission ? resetChallenge : nextMission}
+              className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 rounded-xl transition-colors cursor-pointer"
+            >
+              {isLastMission ? (
+                <>
+                  <RotateCcw size={18} /> 처음부터 다시
+                </>
+              ) : (
+                <>
+                  다음 미션 <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </div>
+        )}
+        <FeedbackPanel result={state.lastResult} />
+      </div>
     </motion.div>
   );
 };
