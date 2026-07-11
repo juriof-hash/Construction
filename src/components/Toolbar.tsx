@@ -43,8 +43,8 @@ export const Toolbar = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const SettingsPanel = ({ isMobile = false }) => (
-    <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-col gap-4 items-end'}`}>
-      <div className={`flex gap-2 bg-white/80 backdrop-blur shadow-lg rounded-xl p-2 border border-slate-200/50 ${isMobile ? 'justify-between' : ''}`}>
+    <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-row items-center gap-2'}`}>
+      <div className={`relative z-20 flex gap-2 ${isMobile ? 'bg-white/80 backdrop-blur shadow-lg rounded-xl p-2 border border-slate-200/50 justify-between' : ''}`}>
         <button
           onClick={() => {
             dispatch({
@@ -57,7 +57,7 @@ export const Toolbar = ({
             });
             if (isMobile) setIsMenuOpen(false);
           }}
-          className="group relative min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
+          className="group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
         >
           <Maximize size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -67,7 +67,7 @@ export const Toolbar = ({
         <div className="w-px bg-slate-200 mx-1"></div>
         <button
           onClick={() => { setShowGrid(!showGrid); if (isMobile) setIsMenuOpen(false); }}
-          className={`group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${showGrid ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+          className={`group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${showGrid ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
         >
           <Grid3x3 size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -77,7 +77,7 @@ export const Toolbar = ({
         <div className="w-px bg-slate-200 mx-1"></div>
         <button
           onClick={() => { dispatch({ type: "UNDO" }); if (isMobile) setIsMenuOpen(false); }}
-          className="group relative min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
+          className="group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
         >
           <Undo2 size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -86,7 +86,7 @@ export const Toolbar = ({
         </button>
         <button
           onClick={() => { dispatch({ type: "REDO" }); if (isMobile) setIsMenuOpen(false); }}
-          className="group relative min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
+          className="group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
         >
           <Redo2 size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -95,10 +95,12 @@ export const Toolbar = ({
         </button>
       </div>
 
-      <div className={`flex gap-2 bg-white/80 backdrop-blur shadow-lg rounded-xl p-2 border border-slate-200/50 ${isMobile ? 'justify-between' : ''}`}>
+      <div className={`${isMobile ? 'hidden' : 'w-px h-6 bg-slate-200 mx-1'}`}></div>
+
+      <div className={`relative z-10 flex gap-2 ${isMobile ? 'bg-white/80 backdrop-blur shadow-lg rounded-xl p-2 border border-slate-200/50 justify-between' : ''}`}>
         <button
           onClick={() => { setInputMode("auto"); if (isMobile) setIsMenuOpen(false); }}
-          className={`group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-xs font-semibold ${inputMode === "auto" ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+          className={`group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-xs font-semibold ${inputMode === "auto" ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
         >
           AUTO
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -107,7 +109,7 @@ export const Toolbar = ({
         </button>
         <button
           onClick={() => { setInputMode("mouse"); if (isMobile) setIsMenuOpen(false); }}
-          className={`group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg ${inputMode === "mouse" ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+          className={`group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg ${inputMode === "mouse" ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
         >
           <Mouse size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -116,7 +118,7 @@ export const Toolbar = ({
         </button>
         <button
           onClick={() => { setInputMode("touch"); if (isMobile) setIsMenuOpen(false); }}
-          className={`group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg ${inputMode === "touch" ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+          className={`group relative hover:z-50 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg ${inputMode === "touch" ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
         >
           <Smartphone size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
@@ -155,19 +157,26 @@ export const Toolbar = ({
         </div>
 
         {/* Separator */}
-        <div className="w-px h-6 bg-slate-200 mx-1"></div>
+        <div className="md:hidden w-px h-6 bg-slate-200 mx-1"></div>
 
-        {/* Hamburger Button */}
-        <div className="relative shrink-0 group">
+        {/* Desktop Settings Tools */}
+        <div className="hidden md:flex items-center gap-1">
+          <SettingsPanel isMobile={false} />
+        </div>
+
+        {/* Hamburger Button (Mobile only) */}
+        <div className="relative shrink-0 md:hidden">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className={`w-[40px] h-[40px] flex items-center justify-center rounded-lg transition-colors ${isMenuOpen ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-100"}`}
+            className={`group relative w-[40px] h-[40px] flex items-center justify-center rounded-lg transition-colors ${isMenuOpen ? "bg-slate-100 text-slate-900" : "text-slate-700 hover:bg-slate-100"}`}
           >
             {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            {!isMenuOpen && (
+              <span className="absolute -bottom-10 right-0 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
+                설정 및 도구
+              </span>
+            )}
           </button>
-          <span className="absolute -bottom-10 right-0 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
-            설정 및 도구
-          </span>
           
           {isMenuOpen && (
             <div className="absolute top-14 right-0 w-max min-w-[240px] max-w-[calc(100vw-32px)] bg-white/95 backdrop-blur-xl shadow-2xl rounded-2xl p-4 border border-slate-200/60 animate-in slide-in-from-top-4 fade-in duration-200">
