@@ -192,6 +192,7 @@ export const useCompassTool = (
               r: r,
               startAngle: startAngleRef.current,
               sweepAngle: ts,
+              style: { strokeWidth: 1, color: "#3b82f6" }, // Default: blue and thin line
             },
           });
         }
