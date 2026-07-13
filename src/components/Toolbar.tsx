@@ -81,7 +81,7 @@ export const Toolbar = ({
         >
           <Undo2 size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
-            실행 취소
+            실행 취소 <span className="ml-1 text-slate-400">([)</span>
           </span>
         </button>
         <button
@@ -90,7 +90,7 @@ export const Toolbar = ({
         >
           <Redo2 size={18} />
           <span className="absolute -bottom-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none z-50">
-            재실행
+            재실행 <span className="ml-1 text-slate-400">(])</span>
           </span>
         </button>
       </div>
@@ -194,6 +194,7 @@ export const Toolbar = ({
           onClick={() => setTool("select")}
           icon={<MousePointer2 size={24} strokeWidth={1.5} />}
           label="선택"
+          shortcut="A"
         />
         <div className="w-px h-10 bg-slate-200 mx-1 md:mx-2"></div>
         <ToolButton
@@ -203,18 +204,21 @@ export const Toolbar = ({
             <div className="w-2.5 h-2.5 rounded-full bg-current m-[10.5px]" />
           }
           label="점"
+          shortcut="S"
         />
         <ToolButton
           active={activeTool === "line"}
           onClick={() => setTool("line")}
           icon={<Slash size={24} strokeWidth={1.5} />}
           label="선"
+          shortcut="D"
         />
         <ToolButton
           active={activeTool === "compass"}
           onClick={() => setTool("compass")}
           icon={<DraftingCompass size={24} strokeWidth={1.5} />}
           label="컴퍼스"
+          shortcut="F"
         />
         <div className="w-px h-10 bg-slate-200 mx-1 md:mx-2"></div>
         <ToolButton
@@ -222,13 +226,14 @@ export const Toolbar = ({
           onClick={() => setTool("pan")}
           icon={<Hand size={24} strokeWidth={1.5} />}
           label="이동"
+          shortcut="Space"
         />
       </div>
     </>
   );
 };
 
-const ToolButton = ({ active, onClick, icon, label }: any) => {
+const ToolButton = ({ active, onClick, icon, label, shortcut }: any) => {
   return (
     <div className="group relative flex flex-col items-center">
       <button
@@ -240,6 +245,7 @@ const ToolButton = ({ active, onClick, icon, label }: any) => {
       </button>
       <span className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs font-medium px-2 py-1 rounded shadow-sm whitespace-nowrap pointer-events-none">
         {label}
+        {shortcut && <span className="ml-1 text-slate-400">({shortcut})</span>}
       </span>
     </div>
   );

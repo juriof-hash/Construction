@@ -9,6 +9,7 @@ import { useGlobalSpacebar } from "../hooks/useGlobalSpacebar";
 import { AppOverlays } from "./AppOverlays";
 import { useWindowSize } from "../hooks/useWindowSize";
 import { useViewportControls } from "../hooks/useViewportControls";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 
 export const GeometryApp: React.FC = () => {
   const { state, dispatch } = useGeometry();
@@ -34,6 +35,8 @@ export const GeometryApp: React.FC = () => {
     dispatch,
     mode
   );
+
+  useKeyboardShortcuts(dispatch, setActiveTool, state.selectedId, geometries);
 
   const { handlers, preview, statusText, touchOffsetIndicator } =
     useToolManager(

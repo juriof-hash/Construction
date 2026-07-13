@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GeomId, GeometryStyle } from '../types/geometry';
 import { Trash2 } from 'lucide-react';
+import { COLORS } from '../constants/colors';
 
 interface StylePopupProps {
   x: number;
@@ -14,8 +15,6 @@ interface StylePopupProps {
   onDelete?: () => void;
   onClose: () => void;
 }
-
-const COLORS = ['#1e293b', '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'];
 
 export const StylePopup = ({ x, y, style, label, disableLabelEdit, onLabelCommit, onChange, onCommit, onDelete, onClose }: StylePopupProps) => {
   const [localWidth, setLocalWidth] = useState(style.strokeWidth || 2);

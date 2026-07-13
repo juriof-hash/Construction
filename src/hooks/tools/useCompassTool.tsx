@@ -221,9 +221,9 @@ export const useCompassTool = (
             cx={center!.x}
             cy={center!.y}
             r={distance(center!, radiusPt)}
-            stroke="#f59e0b"
-            strokeOpacity={0.2}
-            strokeWidth={1}
+            stroke="#3b82f6"
+            strokeWidth={2}
+            strokeDasharray="4 4"
             fill="none"
           />
         </>
@@ -236,9 +236,9 @@ export const useCompassTool = (
             cx={center.x}
             cy={center.y}
             r={r}
-            stroke="#f59e0b"
-            strokeOpacity={0.15}
-            strokeWidth={1}
+            stroke="#3b82f6"
+            strokeWidth={2}
+            strokeDasharray="4 4"
             fill="none"
           />
 
@@ -253,7 +253,7 @@ export const useCompassTool = (
                 renderSweep.totalSweep,
               )}
               fill="none"
-              stroke="#f59e0b"
+              stroke="#3b82f6"
               strokeWidth={2}
             />
           )}
