@@ -10,11 +10,14 @@ import { AppOverlays } from "./AppOverlays";
 import { useWindowSize } from "../hooks/useWindowSize";
 import { useViewportControls } from "../hooks/useViewportControls";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useGifRecorder } from "../hooks/useGifRecorder";
+import { GifMakerUI } from "./GifMakerUI";
 
 export const GeometryApp: React.FC = () => {
   const { state, dispatch } = useGeometry();
   const { geometries, view } = state;
   const gRef = useRef<SVGGElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const [activeTool, setActiveTool] = useState<ToolType>("select");
   const [appMode, setAppMode] = useState<AppMode>("free");
@@ -36,7 +39,9 @@ export const GeometryApp: React.FC = () => {
     mode
   );
 
-  useKeyboardShortcuts(dispatch, setActiveTool, state.selectedId, geometries);
+  const { frames, isProcessing, progress, captureFrame, clearFrames, createGif } = useGifRecorder(svgRef);
+
+  useKeyboardShortcuts(dispatch, setActiveTool, state.selectedId, geometries, captureFrame);
 
   const { handlers, preview, statusText, touchOffsetIndicator } =
     useToolManager(
@@ -102,6 +107,7 @@ export const GeometryApp: React.FC = () => {
         setInputMode={setMode}
         showGrid={showGrid}
         setShowGrid={setShowGrid}
+        onCapture={captureFrame}
       />
 
       <AppOverlays
@@ -115,11 +121,20 @@ export const GeometryApp: React.FC = () => {
         setPopupPos={setPopupPos}
       />
 
+      <GifMakerUI
+        frameCount={frames.length}
+        isProcessing={isProcessing}
+        progress={progress}
+        onCreateGif={createGif}
+        onClear={clearFrames}
+      />
+
       {/* Target Crosshair for Touch */}
       {touchOffsetIndicator}
 
       {/* Main Canvas SVG */}
       <svg
+        ref={svgRef}
         className={`w-full h-full absolute inset-0 z-0 select-none ${cursorClass}`}
         style={{ touchAction: "none" }}
         onContextMenu={(e) => e.preventDefault()}

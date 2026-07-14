@@ -15,6 +15,7 @@ import {
   Maximize,
   Menu,
   X,
+  Camera,
 } from "lucide-react";
 import { useGeometry } from "../contexts/GeometryContext";
 
@@ -27,6 +28,7 @@ interface ToolbarProps {
   setInputMode: (m: "auto" | "mouse" | "touch") => void;
   showGrid: boolean;
   setShowGrid: (show: boolean) => void;
+  onCapture?: () => void;
 }
 
 export const Toolbar = ({
@@ -38,6 +40,7 @@ export const Toolbar = ({
   setInputMode,
   showGrid,
   setShowGrid,
+  onCapture,
 }: ToolbarProps) => {
   const { dispatch } = useGeometry();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -227,6 +230,24 @@ export const Toolbar = ({
           icon={<Hand size={24} strokeWidth={1.5} />}
           label="이동"
           shortcut="Space"
+        />
+        <div className="w-px h-10 bg-slate-200 mx-1 md:mx-2"></div>
+        <ToolButton
+          active={false}
+          onClick={() => {
+            if (onCapture) {
+              onCapture();
+              // Optional: Add visual feedback for capture
+              const btn = document.getElementById("btn-capture");
+              if (btn) {
+                btn.classList.add("scale-90", "text-indigo-500");
+                setTimeout(() => btn.classList.remove("scale-90", "text-indigo-500"), 150);
+              }
+            }
+          }}
+          icon={<div id="btn-capture" className="transition-all duration-150"><Camera size={24} strokeWidth={1.5} /></div>}
+          label="화면 캡처"
+          shortcut="T"
         />
       </div>
     </>

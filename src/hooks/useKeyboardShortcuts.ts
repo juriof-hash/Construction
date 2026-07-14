@@ -7,7 +7,8 @@ export const useKeyboardShortcuts = (
   dispatch: any,
   setActiveTool: (tool: ToolType) => void,
   selectedId: string | null,
-  geometries: Geometry[]
+  geometries: Geometry[],
+  onCapture?: () => void
 ) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,6 +34,11 @@ export const useKeyboardShortcuts = (
         setActiveTool("compass");
       }
       
+      // Capture frame
+      else if (key === "t" && onCapture) {
+        onCapture();
+      }
+
       // Undo/Redo
       else if (key === "[") {
         dispatch({ type: "UNDO" });
