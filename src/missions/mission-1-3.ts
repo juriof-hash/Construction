@@ -1,8 +1,7 @@
 import { ChallengeMissionData } from "../types/challenge";
 import { Geometry } from "../types/geometry";
 import { validateMission1_3 } from "../data/stage1Validators";
-
-const r = (min: number, max: number) => Math.random() * (max - min) + min;
+import { SeededRandom, safeGenerate, getDailySeed } from "../utils/randomUtils";
 
 export const mission1_3: ChallengeMissionData = {
   id: "mission-1-3",
@@ -16,33 +15,49 @@ export const mission1_3: ChallengeMissionData = {
   referenceLabels: { AB: "AB" },
   validate: validateMission1_3,
   initialGeometries: (): Geometry[] => {
-    const ax = r(-80, -30),
-      ay = r(50, 100);
-    const bx = ax + r(100, 150),
-      by = ay;
-    return [
-      {
-        id: "ref-A",
-        type: "point",
-        pt: { x: ax, y: ay },
-        source: "initial",
-        label: "A",
+    const seed = getDailySeed();
+    const rng = new SeededRandom(seed + 13);
+
+    return safeGenerate(
+      rng,
+      (r, attempt) => {
+        const ax = r.range(-80, -30);
+        const ay = r.range(50, 100);
+        const bx = ax + r.range(100, 150);
+        const by = ay;
+
+        return [
+          {
+            id: "ref-A",
+            type: "point",
+            pt: { x: ax, y: ay },
+            source: "initial",
+            label: "A",
+          },
+          {
+            id: "ref-B",
+            type: "point",
+            pt: { x: bx, y: by },
+            source: "initial",
+            label: "B",
+          },
+          {
+            id: "ref-AB",
+            type: "line",
+            p1: { x: ax, y: ay },
+            p2: { x: bx, y: by },
+            source: "initial",
+            label: "AB",
+          },
+        ];
       },
-      {
-        id: "ref-B",
-        type: "point",
-        pt: { x: bx, y: by },
-        source: "initial",
-        label: "B",
-      },
-      {
-        id: "ref-AB",
-        type: "line",
-        p1: { x: ax, y: ay },
-        p2: { x: bx, y: by },
-        source: "initial",
-        label: "AB",
-      },
-    ];
+      () => {
+        return [
+          { id: "ref-A", type: "point", pt: { x: -50, y: 50 }, source: "initial", label: "A" },
+          { id: "ref-B", type: "point", pt: { x: 50, y: 50 }, source: "initial", label: "B" },
+          { id: "ref-AB", type: "line", p1: { x: -50, y: 50 }, p2: { x: 50, y: 50 }, source: "initial", label: "AB" },
+        ];
+      }
+    );
   },
 };

@@ -18,3 +18,4 @@ export interface ToolHookResult {
 }
 
 export type InputMode = 'auto' | 'mouse' | 'touch';
+export type AppMode = 'free' | 'challenge' | 'leaderboard';

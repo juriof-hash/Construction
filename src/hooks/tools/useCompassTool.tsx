@@ -47,6 +47,14 @@ export const useCompassTool = (
     totalSweep: 0,
   });
   const [pencilHoverAngle, setPencilHoverAngle] = useState<number | null>(null);
+  
+  const dragState = useRef({
+    isDown: false,
+    hasDragged: false,
+    rawDownPt: null as Point2D | null,
+    isNewStart: false,
+  });
+
   const rafRef = useRef<number>(0);
   const pencilRafRef = useRef<number>(0);
 
@@ -75,12 +83,24 @@ export const useCompassTool = (
   const onPointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       if (!active) return;
+      if (!e.isPrimary) {
+        setStep("NEEDLE");
+        setCenter(null);
+        setRadiusPt(null);
+        setR(0);
+        isStartedRef.current = false;
+        dragState.current.isDown = false;
+        return;
+      }
       const { pt } = getWorldCoords(e, gRef);
       const { pt: snapPt } = getSnap(pt);
-
+      dragState.current.isDown = true;
+      dragState.current.hasDragged = false;
+      dragState.current.rawDownPt = pt;
       if (step === "NEEDLE") {
         setCenter(snapPt);
         setStep("PENCIL");
+        dragState.current.isNewStart = true;
       } else if (step === "PENCIL") {
         const isRightClick = e.button === 2;
         if (isRightClick) {
@@ -88,13 +108,7 @@ export const useCompassTool = (
           isMovingCenterRef.current = true;
           return;
         }
-
-        const radiusDist = distance(center!, snapPt);
-        if (radiusDist === 0) return; // Ignore zero radius
-
-        setRadiusPt(snapPt);
-        setR(radiusDist);
-        setStep("SWEEP");
+        dragState.current.isNewStart = false;
       } else if (step === "SWEEP") {
         const isRightClick = e.button === 2;
         const clickTolerance = activeMode === "touch" ? 40 / scale : 20 / scale;
@@ -119,11 +133,16 @@ export const useCompassTool = (
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!active) return;
+      if (!active || !e.isPrimary) return;
       const { pt } = getWorldCoords(e, gRef);
       const { pt: snapPt, snapped } = getSnap(pt);
-
       setHoverPt({ pt: snapPt, snapped });
+      if (dragState.current.isDown && dragState.current.rawDownPt) {
+        const dist = Math.hypot(pt.x - dragState.current.rawDownPt.x, pt.y - dragState.current.rawDownPt.y);
+        if (dist > 10 / scale) {
+          dragState.current.hasDragged = true;
+        }
+      }
       if (activeMode === "touch") {
         setLastTouchCoords({ x: e.clientX, y: e.clientY });
       }
@@ -169,15 +188,30 @@ export const useCompassTool = (
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!active) return;
+      if (!active || !e.isPrimary) return;
+      dragState.current.isDown = false;
       setLastTouchCoords(null);
-
       if (isMovingCenterRef.current) {
         isMovingCenterRef.current = false;
         return;
       }
-
-      if (step === "SWEEP" && isStartedRef.current) {
+      const { pt } = getWorldCoords(e, gRef);
+      const { pt: snapPt } = getSnap(pt);
+      if (step === "PENCIL") {
+        if (dragState.current.hasDragged || !dragState.current.isNewStart) {
+          const radiusDist = distance(center!, snapPt);
+          if (radiusDist > 1e-4) {
+            setRadiusPt(snapPt);
+            setR(radiusDist);
+            setStep("SWEEP");
+          } else {
+            setStep("NEEDLE");
+            setCenter(null);
+          }
+        } else {
+          dragState.current.isNewStart = false;
+        }
+      } else if (step === "SWEEP" && isStartedRef.current) {
         isStartedRef.current = false;
         const ts = totalSweepRef.current;
         if (Math.abs(ts) > 0.05) {
@@ -202,6 +236,17 @@ export const useCompassTool = (
     },
     [active, step, center, radiusPt, r, dispatch],
   );
+
+  const onPointerCancel = useCallback(() => {
+    dragState.current.isDown = false;
+    setStep("NEEDLE");
+    setCenter(null);
+    setRadiusPt(null);
+    setR(0);
+    isStartedRef.current = false;
+    setRenderSweep({ startAngle: 0, totalSweep: 0 });
+    setLastTouchCoords(null);
+  }, []);
 
   const preview = (
     <g className="pointer-events-none">
@@ -311,7 +356,7 @@ export const useCompassTool = (
     ) : null;
 
   return {
-    handlers: { onPointerDown, onPointerMove, onPointerUp },
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
     preview,
     statusText: getStatusText(),
     touchOffsetIndicator,

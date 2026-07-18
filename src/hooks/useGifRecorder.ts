@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import gifshot from 'gifshot';
 
 export const useGifRecorder = (svgRef: React.RefObject<SVGSVGElement>) => {

@@ -135,7 +135,7 @@ export const Toolbar = ({
   return (
     <>
       {/* Unified Top Bar (Desktop & Mobile) */}
-      <div className="fixed top-4 inset-x-2 md:top-6 md:left-1/2 md:-translate-x-1/2 md:inset-x-auto z-30 flex items-center justify-between md:justify-center gap-1 md:gap-2 bg-white/90 backdrop-blur shadow-lg rounded-xl p-1.5 border border-slate-200 pointer-events-auto">
+      <div className="fixed top-4 inset-x-2 md:top-6 md:left-6 md:translate-x-0 md:inset-x-auto z-30 flex items-center justify-between md:justify-start gap-1 md:gap-2 bg-white/90 backdrop-blur shadow-lg rounded-xl p-1.5 border border-slate-200 pointer-events-auto">
         
         {/* Mode Tabs */}
         <div className="flex flex-1 md:flex-none items-center gap-1 md:gap-2">

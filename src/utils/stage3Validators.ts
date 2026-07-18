@@ -17,14 +17,21 @@ function getOriginTriangleSides(refs: Record<string, GeometryObject>) {
 function validateTriangleCongruence(
   objects: GeometryObject[],
   originSides: number[],
-): boolean {
+  targetPointP: { x: number; y: number },
+  maxAllowedRadiiFromSides: number = 3
+): { isSuccess: boolean; isCongruent: boolean; message?: string } {
   const graph = new GeoGraph();
   const segments = objects.filter((o) => o.type === "segment");
   for (const seg of segments) {
     graph.addSegment(seg);
   }
 
+  // 1.5% 상대 오차율 적용
+  const maxSide = originSides[2];
+  const relEpsilon = Math.max(EPSILON, maxSide * 0.015);
+
   const triangles = graph.findCyclesOfSize(3);
+  let foundCongruent = false;
 
   for (const tri of triangles) {
     const p1 = tri[0].pt;
@@ -38,19 +45,48 @@ function validateTriangleCongruence(
     ].sort((a, b) => a - b);
 
     const isCongruent =
-      Math.abs(userSides[0] - originSides[0]) <= EPSILON * 2 &&
-      Math.abs(userSides[1] - originSides[1]) <= EPSILON * 2 &&
-      Math.abs(userSides[2] - originSides[2]) <= EPSILON * 2;
+      Math.abs(userSides[0] - originSides[0]) <= relEpsilon * 2 &&
+      Math.abs(userSides[1] - originSides[1]) <= relEpsilon * 2 &&
+      Math.abs(userSides[2] - originSides[2]) <= relEpsilon * 2;
 
     if (isCongruent) {
-      // 삼각형이 오른쪽에 위치하는지(x > -50 근처) 확인
-      if (p1.x > -50 || p2.x > -50 || p3.x > -50) {
-        return true;
+      if (
+        distance(p1, targetPointP) <= relEpsilon ||
+        distance(p2, targetPointP) <= relEpsilon ||
+        distance(p3, targetPointP) <= relEpsilon
+      ) {
+        foundCongruent = true;
+        break;
       }
     }
   }
 
-  return false;
+  if (!foundCongruent) {
+    return { isSuccess: false, isCongruent: false };
+  }
+
+  // 합동인 삼각형을 찾았을 경우, 치팅(의도되지 않은 방식) 검사
+  // 현재 존재하는 원/호 객체들 중에서 원본 삼각형의 변의 길이를 반지름으로 쓴 횟수 검사
+  // (실수 방지 목적이며, 완전히 지웠다면 봐준다)
+  const userCircles = objects.filter(o => o.type === "circle" || o.type === "arc");
+  let usedSideRadiiCount = 0;
+  
+  for (const side of originSides) {
+    const isUsed = userCircles.some(
+      c => c.radius !== undefined && Math.abs(c.radius - side) <= relEpsilon
+    );
+    if (isUsed) usedSideRadiiCount++;
+  }
+
+  if (usedSideRadiiCount > maxAllowedRadiiFromSides) {
+    return { 
+      isSuccess: false, 
+      isCongruent: true, 
+      message: "작도된 삼각형은 합동이지만, 주어진 조건 외의 변의 길이를 컴퍼스로 측정한 기록이 있습니다. 해당 미션이 요구하는 합동 작도법을 사용하세요."
+    };
+  }
+
+  return { isSuccess: true, isCongruent: true };
 }
 
 export const validateMission3_1 = (
@@ -59,16 +95,23 @@ export const validateMission3_1 = (
   stats: PlayerStats,
 ): ChallengeValidationResult => {
   const originSides = getOriginTriangleSides(refs);
-  if (!originSides)
+  const targetPointP = refs["P"]?.points[0];
+  if (!originSides || !targetPointP)
     return { isSuccess: false, message: "System error: Missing ref" };
 
-  if (validateTriangleCongruence(objects, originSides)) {
+  const result = validateTriangleCongruence(objects, originSides, targetPointP, 3);
+
+  if (result.isSuccess) {
     return {
       isSuccess: true,
       message:
         "정답입니다! 세 변의 길이가 같은(SSS 합동) 완벽한 삼각형을 작도하셨습니다.",
       score: calculateScore(stats, 4, 60),
     };
+  }
+
+  if (result.isCongruent && result.message) {
+    return { isSuccess: false, message: result.message };
   }
 
   return {
@@ -84,16 +127,23 @@ export const validateMission3_2 = (
   stats: PlayerStats,
 ): ChallengeValidationResult => {
   const originSides = getOriginTriangleSides(refs);
-  if (!originSides)
+  const targetPointP = refs["O"]?.points[0];
+  if (!originSides || !targetPointP)
     return { isSuccess: false, message: "System error: Missing ref" };
 
-  if (validateTriangleCongruence(objects, originSides)) {
+  const result = validateTriangleCongruence(objects, originSides, targetPointP, 2);
+
+  if (result.isSuccess) {
     return {
       isSuccess: true,
       message:
         "정답입니다! 두 변의 길이와 그 끼인각을 정확히 복사하여(SAS 합동) 작도하셨습니다.",
       score: calculateScore(stats, 4, 70),
     };
+  }
+
+  if (result.isCongruent && result.message) {
+    return { isSuccess: false, message: result.message };
   }
 
   return {
@@ -109,16 +159,24 @@ export const validateMission3_3 = (
   stats: PlayerStats,
 ): ChallengeValidationResult => {
   const originSides = getOriginTriangleSides(refs);
-  if (!originSides)
+  const targetPointP = refs["A'"]?.points[0];
+  if (!originSides || !targetPointP)
     return { isSuccess: false, message: "System error: Missing ref" };
 
-  if (validateTriangleCongruence(objects, originSides)) {
+  // ASA는 잔여 리스크(우연히 임의 반지름이 다른 두 변과 일치)가 존재하나, 완벽한 안티치트보다는 실수 방지가 목적이므로 1로 설정.
+  const result = validateTriangleCongruence(objects, originSides, targetPointP, 1);
+
+  if (result.isSuccess) {
     return {
       isSuccess: true,
       message:
         "정답입니다! 양 끝각을 정확히 복사하여(ASA 합동) 완벽한 삼각형을 작도하셨습니다.",
       score: calculateScore(stats, 4, 70),
     };
+  }
+
+  if (result.isCongruent && result.message) {
+    return { isSuccess: false, message: result.message };
   }
 
   return {

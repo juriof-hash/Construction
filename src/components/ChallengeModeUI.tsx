@@ -4,6 +4,7 @@ import { MISSIONS } from "../missions";
 import { useGeometry } from "../contexts/GeometryContext";
 import { GeometryObject } from "../types/mission";
 import { Geometry } from "../types/geometry";
+import { getDailySeed } from "../utils/randomUtils";
 import { mapGeometryToGeometryObject } from "../utils/challengeGeometry";
 import { FeedbackPanel } from "./FeedbackPanel";
 import { Target, ArrowRight, RotateCcw, Clock, Circle, ChevronDown, ChevronUp } from "lucide-react";
@@ -188,7 +189,7 @@ export const ChallengeModeUI: React.FC = () => {
       <motion.div
         drag
         dragMomentum={false}
-        className="absolute left-0 right-0 mx-auto top-20 md:top-24 w-[calc(100vw-2rem)] md:w-80 bg-white/5 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-5 md:p-6 z-20 cursor-move"
+        className="absolute left-0 right-0 mx-auto top-20 md:top-24 md:left-6 md:right-auto md:mx-0 w-[calc(100vw-2rem)] md:w-80 bg-white/5 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-5 md:p-6 z-20 cursor-move"
       >
         <h2 className="text-lg md:text-xl font-bold text-slate-800 mb-2">
           모든 미션 완료!
@@ -210,7 +211,7 @@ export const ChallengeModeUI: React.FC = () => {
     <motion.div
       drag
       dragMomentum={false}
-      className="absolute left-0 right-0 mx-auto top-20 md:top-24 w-[calc(100vw-2rem)] md:w-96 bg-white/10 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-4 md:p-5 z-20 flex flex-col pointer-events-auto cursor-drag"
+      className="absolute left-0 right-0 mx-auto top-20 md:top-24 md:left-6 md:right-auto md:mx-0 w-[calc(100vw-2rem)] md:w-96 bg-white/10 backdrop-blur rounded-2xl shadow-xl border border-slate-200/60 p-4 md:p-5 z-20 flex flex-col pointer-events-auto cursor-drag"
     >
       <div className="flex items-center justify-between mb-3 cursor-move">
         <div className="relative flex items-center">
@@ -352,6 +353,11 @@ export const ChallengeModeUI: React.FC = () => {
           </div>
         )}
         <FeedbackPanel result={state.lastResult} />
+        <div className="mt-2 text-right">
+          <span className="text-[10px] text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+            Seed: {getDailySeed()}
+          </span>
+        </div>
       </div>
     </motion.div>
   );

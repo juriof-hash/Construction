@@ -19,6 +19,13 @@ export const useLineTool = (
     raySnapPt?: Point2D;
   } | null>(null);
 
+  const dragState = useRef({
+    isDown: false,
+    hasDragged: false,
+    rawDownPt: null as Point2D | null,
+    isNewStart: false,
+  });
+
   // geometriesRef to always have latest without triggering useCallback deps unnecessarily
   const geomRef = useRef(geometries);
   geomRef.current = geometries;
@@ -98,30 +105,46 @@ export const useLineTool = (
   const onPointerDown = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
       if (!active) return;
+      
+      if (!e.isPrimary) {
+         setStartPt(null);
+         setCurrPt(null);
+         dragState.current.isDown = false;
+         return;
+      }
+
       const { pt } = getWorldCoords(e, gRef);
+      const { pt: snapPt, snapped } = getSnap(pt);
+
+      dragState.current.isDown = true;
+      dragState.current.hasDragged = false;
+      dragState.current.rawDownPt = pt;
 
       if (!startPt) {
-        const { pt: snapPt, snapped } = getSnap(pt);
         setStartPt(snapPt);
         setCurrPt({ pt: snapPt, snapped });
+        dragState.current.isNewStart = true;
       } else {
-        const { pt: snapPt, snapped } = calcRaySnap(pt, startPt);
-        // Complete line
-        dispatch({
-          type: "ADD_GEOMETRY",
-          payload: { id: generateId(), type: "line", p1: startPt, p2: snapPt },
-        });
-        setStartPt(null);
-        setCurrPt(null);
+        dragState.current.isNewStart = false;
+        const { pt: raySnapPt, snapped: raySnapped, raySnapPt: rayPt } = calcRaySnap(pt, startPt);
+        setCurrPt({ pt: raySnapPt, snapped: raySnapped, raySnapPt: rayPt });
       }
     },
-    [active, gRef, getSnap, calcRaySnap, dispatch, startPt],
+    [active, gRef, getSnap, calcRaySnap, startPt],
   );
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<SVGSVGElement>) => {
-      if (!active) return;
+      if (!active || !e.isPrimary) return;
+
       const { pt } = getWorldCoords(e, gRef);
+
+      if (dragState.current.isDown && dragState.current.rawDownPt) {
+        const dist = Math.hypot(pt.x - dragState.current.rawDownPt.x, pt.y - dragState.current.rawDownPt.y);
+        if (dist > 10 / scale) {
+          dragState.current.hasDragged = true;
+        }
+      }
 
       if (!startPt) {
         const { pt: snapPt, snapped } = getSnap(pt);
@@ -131,13 +154,49 @@ export const useLineTool = (
         setCurrPt({ pt: snapPt, snapped, raySnapPt });
       }
     },
-    [active, gRef, startPt, getSnap, calcRaySnap],
+    [active, gRef, startPt, getSnap, calcRaySnap, scale],
   );
 
-  const onPointerUp = useCallback(() => {}, []);
-  const onPointerLeave = useCallback(() => {
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent<SVGSVGElement>) => {
+      if (!active || !e.isPrimary) return;
+      dragState.current.isDown = false;
+
+      if (!startPt) return;
+
+      const { pt } = getWorldCoords(e, gRef);
+
+      if (dragState.current.hasDragged || !dragState.current.isNewStart) {
+        const { pt: snapPt } = calcRaySnap(pt, startPt);
+        const dx = snapPt.x - startPt.x;
+        const dy = snapPt.y - startPt.y;
+        if (Math.hypot(dx, dy) > 1e-4) {
+          dispatch({
+            type: "ADD_GEOMETRY",
+            payload: { id: generateId(), type: "line", p1: startPt, p2: snapPt },
+          });
+        }
+        setStartPt(null);
+        const { pt: hoverPt, snapped } = getSnap(pt);
+        setCurrPt({ pt: hoverPt, snapped });
+      } else {
+        dragState.current.isNewStart = false;
+      }
+    },
+    [active, gRef, startPt, calcRaySnap, dispatch, getSnap]
+  );
+
+  const onPointerCancel = useCallback(() => {
+    dragState.current.isDown = false;
+    setStartPt(null);
     setCurrPt(null);
   }, []);
+
+  const onPointerLeave = useCallback(() => {
+    if (!dragState.current.isDown && !startPt) {
+      setCurrPt(null);
+    }
+  }, [startPt]);
 
   const preview = (
     <g className="pointer-events-none">
@@ -176,7 +235,7 @@ export const useLineTool = (
   );
 
   return {
-    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerLeave },
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerLeave, onPointerCancel },
     preview,
     statusText: !startPt
       ? "선의 시작점을 선택하세요."

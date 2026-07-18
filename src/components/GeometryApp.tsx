@@ -24,10 +24,11 @@ export const GeometryApp: React.FC = () => {
   const [showGrid, setShowGrid] = useState(true);
   const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null);
 
-  const mode = useInputMode();
+  const { mode: currentInputMode, activeMode, setMode: setInputMode } = useInputMode();
   const setMode = (m: "auto" | "mouse" | "touch") => {
     localStorage.setItem("geometry_input_mode", m);
     window.dispatchEvent(new Event("storage"));
+    setInputMode(m);
   };
 
   const isSpacePressed = useGlobalSpacebar();
@@ -36,7 +37,7 @@ export const GeometryApp: React.FC = () => {
   const { viewportHandlers, isTwoFingerPan } = useViewportControls(
     view,
     dispatch,
-    mode
+    activeMode
   );
 
   const { frames, isProcessing, progress, captureFrame, clearFrames, createGif } = useGifRecorder(svgRef);
@@ -52,7 +53,7 @@ export const GeometryApp: React.FC = () => {
       geometries,
       view,
       dispatch,
-      mode,
+      activeMode,
       setPopupPos
     );
 
@@ -74,6 +75,9 @@ export const GeometryApp: React.FC = () => {
       onPointerLeave: (e: React.PointerEvent<SVGSVGElement>) => {
         if (isTwoFingerPan) return;
         handlers.onPointerLeave?.(e);
+      },
+      onPointerCancel: (e: React.PointerEvent<SVGSVGElement>) => {
+        handlers.onPointerCancel?.(e);
       },
     };
   }, [handlers, isTwoFingerPan]);
@@ -103,7 +107,7 @@ export const GeometryApp: React.FC = () => {
         setAppMode={setAppMode}
         activeTool={activeTool}
         setTool={setActiveTool}
-        inputMode={mode}
+        inputMode={currentInputMode}
         setInputMode={setMode}
         showGrid={showGrid}
         setShowGrid={setShowGrid}

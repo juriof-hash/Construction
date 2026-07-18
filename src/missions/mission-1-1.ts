@@ -1,8 +1,7 @@
 import { ChallengeMissionData } from "../types/challenge";
 import { Geometry } from "../types/geometry";
 import { validateMission1_1 } from "../data/stage1Validators";
-
-const r = (min: number, max: number) => Math.random() * (max - min) + min;
+import { SeededRandom, safeGenerate, getDailySeed } from "../utils/randomUtils";
 
 export const mission1_1: ChallengeMissionData = {
   id: "mission-1-1",
@@ -16,42 +15,68 @@ export const mission1_1: ChallengeMissionData = {
   referenceLabels: { C: "C", AB: "AB" },
   validate: validateMission1_1,
   initialGeometries: (): Geometry[] => {
-    const ax = r(0, 100),
-      ay = r(-150, -50);
-    const bx = ax + r(50, 100),
-      by = ay;
-    const cx = r(-150, -50),
-      cy = r(-50, 50);
-    return [
-      {
-        id: "ref-C",
-        type: "point",
-        pt: { x: cx, y: cy },
-        source: "initial",
-        label: "C",
+    const seed = getDailySeed();
+    const rng = new SeededRandom(seed + 11); // Add unique offset per mission
+
+    return safeGenerate(
+      rng,
+      (r, attempt) => {
+        // Attempt logic (returns null if invalid, or array of geometries)
+        const ax = r.range(0, 100);
+        const ay = r.range(-150, -50);
+        const bx = ax + r.range(50, 100);
+        const by = ay;
+        const cx = r.range(-150, -50);
+        const cy = r.range(-50, 50);
+
+        // Degenerate checks
+        const lenAB = Math.hypot(bx - ax, by - ay);
+        if (lenAB < 30) return null; // Avoid too short lines
+        const distCtoA = Math.hypot(cx - ax, cy - ay);
+        const distCtoB = Math.hypot(cx - bx, cy - by);
+        if (distCtoA < 40 || distCtoB < 40) return null; // Avoid overlapping points
+
+        return [
+          {
+            id: "ref-C",
+            type: "point",
+            pt: { x: cx, y: cy },
+            source: "initial",
+            label: "C",
+          },
+          {
+            id: "ref-A",
+            type: "point",
+            pt: { x: ax, y: ay },
+            source: "initial",
+            label: "A",
+          },
+          {
+            id: "ref-B",
+            type: "point",
+            pt: { x: bx, y: by },
+            source: "initial",
+            label: "B",
+          },
+          {
+            id: "ref-AB",
+            type: "line",
+            p1: { x: ax, y: ay },
+            p2: { x: bx, y: by },
+            source: "initial",
+            label: "AB",
+          },
+        ];
       },
-      {
-        id: "ref-A",
-        type: "point",
-        pt: { x: ax, y: ay },
-        source: "initial",
-        label: "A",
-      },
-      {
-        id: "ref-B",
-        type: "point",
-        pt: { x: bx, y: by },
-        source: "initial",
-        label: "B",
-      },
-      {
-        id: "ref-AB",
-        type: "line",
-        p1: { x: ax, y: ay },
-        p2: { x: bx, y: by },
-        source: "initial",
-        label: "AB",
-      },
-    ];
+      () => {
+        // Fallback geometries
+        return [
+          { id: "ref-C", type: "point", pt: { x: -100, y: 0 }, source: "initial", label: "C" },
+          { id: "ref-A", type: "point", pt: { x: 50, y: -100 }, source: "initial", label: "A" },
+          { id: "ref-B", type: "point", pt: { x: 120, y: -100 }, source: "initial", label: "B" },
+          { id: "ref-AB", type: "line", p1: { x: 50, y: -100 }, p2: { x: 120, y: -100 }, source: "initial", label: "AB" },
+        ];
+      }
+    );
   },
 };

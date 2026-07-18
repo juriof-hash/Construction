@@ -1,5 +1,6 @@
 import React from "react";
-import { AppMode, Geometry } from "../types/tool";
+import { AppMode } from "../types/tool";
+import { Geometry } from "../types/geometry";
 import { ChallengeModeUI } from "./ChallengeModeUI";
 import { LeaderboardView } from "./LeaderboardView";
 import { StylePopup } from "./StylePopup";
