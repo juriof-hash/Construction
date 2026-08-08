@@ -1,4 +1,6 @@
-import { GeometryObject } from "../types/mission";
+const fs = require('fs');
+
+const code = `import { GeometryObject } from "../types/mission";
 import { ChallengeValidationResult, PlayerStats } from "../types/challenge";
 import { calculateScore } from "../data/stage1Validators";
 import { distancePointToInfiniteLine } from "../utils/geoGraphValidation";
@@ -111,3 +113,5 @@ export function evaluateCircumcenter(
     return { isSuccess: false, message: "외접원이 세 꼭짓점 A, B, C를 모두 정확히 지나야 합니다." };
   }
 }
+`;
+fs.writeFileSync('src/missions/evaluateCircumcenter.ts', code);

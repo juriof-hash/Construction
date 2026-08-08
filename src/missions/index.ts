@@ -11,6 +11,9 @@ import { mission3_3 } from "./mission-3-3";
 import { mission4_1 } from "./mission-4-1";
 import { mission4_2 } from "./mission-4-2";
 import { mission4_3 } from "./mission-4-3";
+import { mission5_1 } from "./mission-5-1";
+import { mission5_2 } from "./mission-5-2";
+import { mission5_3 } from "./mission-5-3";
 
 export const MISSIONS: ChallengeMissionData[] = [
   mission1_1,
@@ -25,4 +28,7 @@ export const MISSIONS: ChallengeMissionData[] = [
   mission4_1,
   mission4_2,
   mission4_3,
+  mission5_1,
+  mission5_2,
+  mission5_3,
 ];

@@ -8,6 +8,7 @@ export interface ToolHandlers {
   onPointerMove: (e: PointerEvent<SVGSVGElement>) => void;
   onPointerUp: (e: PointerEvent<SVGSVGElement>) => void;
   onPointerLeave?: (e: PointerEvent<SVGSVGElement>) => void;
+  onPointerCancel?: (e: PointerEvent<SVGSVGElement>) => void;
 }
 
 export interface ToolHookResult {

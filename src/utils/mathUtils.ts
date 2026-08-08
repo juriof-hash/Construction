@@ -49,3 +49,28 @@ export const describeArc = (x: number, y: number, radius: number, startAngle: nu
     "A", radius, radius, 0, largeArcFlag, sweepFlag, end.x, end.y
   ].join(" ");
 };
+
+export const dotProduct = (v1: Point2D, v2: Point2D) => {
+  return v1.x * v2.x + v1.y * v2.y;
+};
+
+export const crossProduct = (v1: Point2D, v2: Point2D) => {
+  return v1.x * v2.y - v1.y * v2.x;
+};
+
+export const length = (v: Point2D) => {
+  return Math.hypot(v.x, v.y);
+};
+
+export const normalize = (v: Point2D): Point2D => {
+  const len = length(v);
+  if (len === 0) return { x: 0, y: 0 };
+  return { x: v.x / len, y: v.y / len };
+};
+
+export const isPointOnLineSegment = (p: Point2D, a: Point2D, b: Point2D, epsilon: number = 0.1) => {
+  const dAB = distance(a, b);
+  const dAP = distance(a, p);
+  const dPB = distance(p, b);
+  return Math.abs(dAP + dPB - dAB) < epsilon;
+};
