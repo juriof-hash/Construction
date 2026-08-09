@@ -87,8 +87,8 @@ export const ChallengeModeUI: React.FC = () => {
       setElapsedSec(0);
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
-        setElapsedSec((prev) => prev + 1);
-      }, 1000);
+        setElapsedSec((prev) => +(prev + 0.1).toFixed(1));
+      }, 100);
 
       const aabb = computeGeomsAABB(geoms);
       if (aabb) {
@@ -240,7 +240,7 @@ export const ChallengeModeUI: React.FC = () => {
                 elapsedSec > currentMission.targetTimeSec ? "text-red-500" : ""
               }
             >
-              {elapsedSec}
+              {elapsedSec.toFixed(1)}
             </span>
             <span className="text-slate-400 text-xs mx-0.5">/</span>
             <span className="text-slate-500">{currentMission.targetTimeSec}s</span>

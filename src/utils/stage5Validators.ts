@@ -1,22 +1,83 @@
 import { GeometryObject } from "../types/mission";
 import { ChallengeValidationResult, PlayerStats } from "../types/challenge";
-import { distance, dotProduct, crossProduct, length, normalize, isPointOnLineSegment } from "./mathUtils";
-import { distancePointToInfiniteLine } from "./geoGraphValidation";
 import { calculateScore } from "../data/stage1Validators";
+import { distance, dotProduct, normalize, crossProduct } from "./mathUtils";
+import { distancePointToInfiniteLine } from "./geoGraphValidation";
 
-// Helper to get relative epsilon
-function getEpsilons(points: {x: number, y: number}[]) {
-  let maxDist = 0;
-  for (let i = 0; i < points.length; i++) {
-    for (let j = i + 1; j < points.length; j++) {
-      maxDist = Math.max(maxDist, distance(points[i], points[j]));
+const STRICT_EPSILON_DIST = 1.0;
+const STRICT_EPSILON_ANGLE = 0.01;
+
+function getIncenter(A: {x: number, y: number}, B: {x: number, y: number}, C: {x: number, y: number}) {
+  const a = distance(B, C);
+  const b = distance(C, A);
+  const c = distance(A, B);
+  const p = a + b + c;
+  return {
+    x: (a * A.x + b * B.x + c * C.x) / p,
+    y: (a * A.y + b * B.y + c * C.y) / p
+  };
+}
+
+function checkPerpendicularConstruction(P: {x:number, y:number}, A: {x:number, y:number}, B: {x:number, y:number}, objects: GeometryObject[]) {
+  const userCircles = objects.filter(o => o.source === "user" && (o.type === "circle" || o.type === "arc"));
+  for (let i = 0; i < userCircles.length; i++) {
+    for (let j = i + 1; j < userCircles.length; j++) {
+      const c1 = userCircles[i];
+      const c2 = userCircles[j];
+      const m1 = c1.points[0];
+      const m2 = c2.points[0];
+      const r1 = c1.radius || 0;
+      const r2 = c2.radius || 0;
+
+      if (distance(m1, m2) < STRICT_EPSILON_DIST) continue;
+      if (distancePointToInfiniteLine(m1, A, B) > STRICT_EPSILON_DIST) continue;
+      if (distancePointToInfiniteLine(m2, A, B) > STRICT_EPSILON_DIST) continue;
+      if (Math.abs(r1 - r2) > STRICT_EPSILON_DIST) continue;
+      if (Math.abs(distance(P, m1) - distance(P, m2)) > STRICT_EPSILON_DIST) continue;
+      if (distance(m1, m2) > r1 + r2) continue;
+
+      return true;
     }
   }
-  return {
-    EPSILON_DIST: Math.max(5, maxDist * 0.03),
-    EPSILON_RADIUS: Math.max(5, maxDist * 0.04),
-    EPSILON_ANGLE: 0.02
-  };
+  return false;
+}
+
+function checkAngleBisectorConstruction(V: {x:number, y:number}, P1: {x:number, y:number}, P2: {x:number, y:number}, objects: GeometryObject[]) {
+  const userCircles = objects.filter(o => o.source === "user" && (o.type === "circle" || o.type === "arc"));
+  for (let i = 0; i < userCircles.length; i++) {
+    for (let j = i + 1; j < userCircles.length; j++) {
+      const c1 = userCircles[i];
+      const c2 = userCircles[j];
+      const m1 = c1.points[0];
+      const m2 = c2.points[0];
+      const r1 = c1.radius || 0;
+      const r2 = c2.radius || 0;
+
+      if (distance(m1, m2) < STRICT_EPSILON_DIST) continue;
+      if (Math.abs(r1 - r2) > STRICT_EPSILON_DIST) continue;
+
+      const checkOnRay = (M: {x:number, y:number}, origin: {x:number, y:number}, target: {x:number, y:number}) => {
+         const distToLine = distancePointToInfiniteLine(M, origin, target);
+         const dirTarget = normalize({x: target.x - origin.x, y: target.y - origin.y});
+         const dirM = normalize({x: M.x - origin.x, y: M.y - origin.y});
+         return distToLine < STRICT_EPSILON_DIST && dotProduct(dirTarget, dirM) > 0.99;
+      };
+
+      const m1On1 = checkOnRay(m1, V, P1);
+      const m2On2 = checkOnRay(m2, V, P2);
+      const m1On2 = checkOnRay(m1, V, P2);
+      const m2On1 = checkOnRay(m2, V, P1);
+
+      if ((m1On1 && m2On2) || (m1On2 && m2On1)) {
+         if (Math.abs(distance(V, m1) - distance(V, m2)) < STRICT_EPSILON_DIST) {
+             if (distance(m1, m2) <= r1 + r2) {
+                 return true;
+             }
+         }
+      }
+    }
+  }
+  return false;
 }
 
 export function validatePerpendicularLine(
@@ -31,54 +92,46 @@ export function validatePerpendicularLine(
   
   const A = lineL.points[0];
   const B = lineL.points[1];
-  
-  const { EPSILON_DIST, EPSILON_ANGLE } = getEpsilons([A, B, pointP]);
 
-  // Calculate perpendicular foot
+  if (!checkPerpendicularConstruction(pointP, A, B, objects)) {
+    return { isSuccess: false, message: "정확한 작도 순서를 따라주세요: 직선 위의 두 교점을 중심으로 반지름이 같은 두 원을 그려야 합니다." };
+  }
+
   const dx = B.x - A.x;
   const dy = B.y - A.y;
   const length2 = dx * dx + dy * dy;
   const t = ((pointP.x - A.x) * dx + (pointP.y - A.y) * dy) / length2;
-  const foot = {
-    x: A.x + t * dx,
-    y: A.y + t * dy,
-  };
+  const foot = { x: A.x + t * dx, y: A.y + t * dy };
 
   const dirL = normalize({ x: dx, y: dy });
-
   const userLines = objects.filter(o => o.source === "user" && (o.type === "line" || o.type === "segment"));
-  
+
   for (const line of userLines) {
     const p1 = line.points[0];
     const p2 = line.points[1];
     const dirUser = normalize({ x: p2.x - p1.x, y: p2.y - p1.y });
     
-    // Check perpendicularity
     const dot = dotProduct(dirL, dirUser);
-    if (Math.abs(dot) < EPSILON_ANGLE) {
-      // It is perpendicular. Now check if it passes through P AND the foot
+    if (Math.abs(dot) < STRICT_EPSILON_ANGLE) {
       if (line.type === "line") {
-        // For infinite lines, just checking distance from points to the line is enough
         const distP = distancePointToInfiniteLine(pointP, p1, p2);
         const distFoot = distancePointToInfiniteLine(foot, p1, p2);
-        if (distP < EPSILON_DIST && distFoot < EPSILON_DIST) {
+        if (distP < STRICT_EPSILON_DIST && distFoot < STRICT_EPSILON_DIST) {
            return { isSuccess: true, message: "성공!", score: calculateScore(stats, 4, 30) };
         }
       } else {
-        // For segments, it must CONTAIN both P and the foot within its bounding segment
         const distP = distancePointToInfiniteLine(pointP, p1, p2);
         const distFoot = distancePointToInfiniteLine(foot, p1, p2);
         
-        if (distP < EPSILON_DIST && distFoot < EPSILON_DIST) {
-           // Ensure the segment is long enough to cover both
+        if (distP < STRICT_EPSILON_DIST && distFoot < STRICT_EPSILON_DIST) {
            const p1_p = distance(p1, pointP);
            const p2_p = distance(p2, pointP);
            const len = distance(p1, p2);
-           const pOnSegment = Math.abs(p1_p + p2_p - len) < EPSILON_DIST;
+           const pOnSegment = Math.abs(p1_p + p2_p - len) < STRICT_EPSILON_DIST;
 
            const p1_f = distance(p1, foot);
            const p2_f = distance(p2, foot);
-           const footOnSegment = Math.abs(p1_f + p2_f - len) < EPSILON_DIST;
+           const footOnSegment = Math.abs(p1_f + p2_f - len) < STRICT_EPSILON_DIST;
 
            if (pOnSegment && footOnSegment) {
              return { isSuccess: true, message: "성공!", score: calculateScore(stats, 4, 30) };
@@ -88,20 +141,7 @@ export function validatePerpendicularLine(
     }
   }
 
-  return { isSuccess: false, message: "점 P를 지나며 직선 l에 수직인 선분(또는 직선)을 작도하세요. (수선의 발 포함)" };
-}
-
-// Helper to get incenter
-function getIncenter(A: {x: number, y: number}, B: {x: number, y: number}, C: {x: number, y: number}) {
-  const a = distance(B, C);
-  const b = distance(C, A);
-  const c = distance(A, B);
-  const p = a + b + c;
-  
-  return {
-    x: (a * A.x + b * B.x + c * C.x) / p,
-    y: (a * A.y + b * B.y + c * C.y) / p
-  };
+  return { isSuccess: false, message: "마지막으로 교점과 점 P를 연결하는 선분/직선을 작도해주세요." };
 }
 
 export function validateIncenter(
@@ -115,39 +155,30 @@ export function validateIncenter(
   
   if (!A || !B || !C) return { isSuccess: false, message: "기본 꼭짓점이 없습니다." };
   
-  const { EPSILON_DIST, EPSILON_ANGLE } = getEpsilons([A, B, C]);
-  
-  const incenter = getIncenter(A, B, C);
-  
-  // Angle bisector check
-  const userLines = objects.filter(o => o.source === "user" && (o.type === "line" || o.type === "segment"));
-  
   let validBisectors = 0;
   
-  const checkBisector = (V: {x: number, y: number}, P1: {x: number, y: number}, P2: {x: number, y: number}) => {
+  const checkBisectorLine = (V: {x:number, y:number}, P1: {x:number, y:number}, P2: {x:number, y:number}) => {
     const dir1 = normalize({ x: P1.x - V.x, y: P1.y - V.y });
     const dir2 = normalize({ x: P2.x - V.x, y: P2.y - V.y });
     const bisectorDir = normalize({ x: dir1.x + dir2.x, y: dir1.y + dir2.y });
     
+    const userLines = objects.filter(o => o.source === "user" && (o.type === "line" || o.type === "segment"));
     for (const line of userLines) {
       const p1 = line.points[0];
       const p2 = line.points[1];
       
-      // Does line pass near V?
       const distV = distancePointToInfiniteLine(V, p1, p2);
       let startsNearV = false;
       if (line.type === "segment") {
-         startsNearV = distance(V, p1) < EPSILON_DIST || distance(V, p2) < EPSILON_DIST;
+         startsNearV = distance(V, p1) < STRICT_EPSILON_DIST || distance(V, p2) < STRICT_EPSILON_DIST;
       } else {
-         startsNearV = distV < EPSILON_DIST;
+         startsNearV = distV < STRICT_EPSILON_DIST;
       }
       
       if (startsNearV) {
-        // Is direction matching bisectorDir?
         const lineDir = normalize({ x: p2.x - p1.x, y: p2.y - p1.y });
         const dot = dotProduct(lineDir, bisectorDir);
-        // It could be parallel or anti-parallel
-        if (Math.abs(Math.abs(dot) - 1.0) < EPSILON_ANGLE) {
+        if (Math.abs(Math.abs(dot) - 1.0) < STRICT_EPSILON_ANGLE) {
           return true;
         }
       }
@@ -155,18 +186,26 @@ export function validateIncenter(
     return false;
   };
 
-  if (checkBisector(A, B, C)) validBisectors++;
-  if (checkBisector(B, A, C)) validBisectors++;
-  if (checkBisector(C, A, B)) validBisectors++;
+  const hasProcessA = checkAngleBisectorConstruction(A, B, C, objects);
+  const hasProcessB = checkAngleBisectorConstruction(B, A, C, objects);
+  const hasProcessC = checkAngleBisectorConstruction(C, A, B, objects);
+
+  const hasLineA = checkBisectorLine(A, B, C);
+  const hasLineB = checkBisectorLine(B, A, C);
+  const hasLineC = checkBisectorLine(C, A, B);
+
+  if (hasProcessA && hasLineA) validBisectors++;
+  if (hasProcessB && hasLineB) validBisectors++;
+  if (hasProcessC && hasLineC) validBisectors++;
 
   if (validBisectors < 2) {
-    return { isSuccess: false, message: "두 개 이상의 각의 이등분선을 작도하여 교점(내심)을 찾아야 합니다." };
+    return { isSuccess: false, message: "두 개 이상의 각의 이등분선을 올바른 작도법으로 그려 교점(내심)을 찾아야 합니다." };
   }
 
-  // Check if a point is placed at the incenter
+  const incenter = getIncenter(A, B, C);
   const userPoints = objects.filter(o => o.source === "user" && o.type === "point").flatMap(o => o.points || []);
-  const foundIncenter = userPoints.some(p => distance(p, incenter) < EPSILON_DIST);
-
+  const foundIncenter = userPoints.some(p => distance(p, incenter) < STRICT_EPSILON_DIST);
+  
   if (!foundIncenter) {
     return { isSuccess: false, message: "각의 이등분선의 교점(내심)에 점을 찍어주세요." };
   }
@@ -179,6 +218,7 @@ export function validateIncircle(
   refs: Record<string, GeometryObject>,
   stats: PlayerStats
 ): ChallengeValidationResult {
+  // 1. 내심 작도 확인
   const incenterResult = validateIncenter(objects, refs, stats);
   if (!incenterResult.isSuccess) {
     return incenterResult;
@@ -190,34 +230,36 @@ export function validateIncircle(
   
   if (!A || !B || !C) return { isSuccess: false, message: "기본 꼭짓점이 없습니다." };
 
-  const { EPSILON_DIST, EPSILON_RADIUS } = getEpsilons([A, B, C]);
-  
   const incenter = getIncenter(A, B, C);
   const a = distance(B, C);
   const b = distance(C, A);
   const c = distance(A, B);
   
+  // 2. 내심에서 변에 내린 수선 작도 확인
+  const perpAB = checkPerpendicularConstruction(incenter, A, B, objects);
+  const perpBC = checkPerpendicularConstruction(incenter, B, C, objects);
+  const perpCA = checkPerpendicularConstruction(incenter, C, A, objects);
+
+  if (!perpAB && !perpBC && !perpCA) {
+     return { isSuccess: false, message: "내심에서 삼각형의 한 변에 내린 수선을 작도하여 내접원의 반지름(접점)을 찾아야 합니다." };
+  }
+
   const cross = Math.abs(crossProduct({x: B.x - A.x, y: B.y - A.y}, {x: C.x - A.x, y: C.y - A.y}));
   const area = cross / 2;
   const r_true = 2 * area / (a + b + c);
 
+  // 3. 내접원 확인
   const userCircles = objects.filter(o => o.source === "user" && o.type === "circle");
-  if (userCircles.length === 0) {
-    return { isSuccess: false, message: "내접원을 작도해주세요." };
-  }
+  
+  const incircle = userCircles.find(circle => {
+     const O = circle.points[0];
+     const r = circle.radius;
+     if (!O || r === undefined) return false;
+     return distance(O, incenter) < STRICT_EPSILON_DIST && Math.abs(r - r_true) < STRICT_EPSILON_DIST;
+  });
 
-  const lastCircle = userCircles[userCircles.length - 1];
-  const O = lastCircle.points[0];
-  const r = lastCircle.radius;
-
-  if (!O || r === undefined) return { isSuccess: false, message: "원 데이터가 올바르지 않습니다." };
-
-  if (distance(O, incenter) > EPSILON_DIST) {
-    return { isSuccess: false, message: "원의 중심이 내심과 일치하지 않습니다." };
-  }
-
-  if (Math.abs(r - r_true) > EPSILON_RADIUS) {
-    return { isSuccess: false, message: "내접원의 반지름이 정확하지 않습니다." };
+  if (!incircle) {
+    return { isSuccess: false, message: "반지름이 정확한 내접원을 작도해주세요. (수선을 내려 접점을 찾고 스냅하세요)" };
   }
 
   return { isSuccess: true, message: "성공!", score: calculateScore(stats, 6, 90) };
